@@ -15,7 +15,6 @@ _all_aps = create_output(utils.airports)
 
 _active_aps = create_output(utils.active_airports)
 
-
 app = Flask(__name__)
 
 @app.route('/data/ap_routes', methods=['GET', 'OPTIONS'])

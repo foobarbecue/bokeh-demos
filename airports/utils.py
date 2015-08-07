@@ -141,18 +141,12 @@ def create_output(df):
         'lat': [float(x) for x in df.lat],
     }
 
-    for key in ['color', 'id', 'alpha', 'radius']:
+    for key in ['id', 'alpha', 'radius']:
         if key in df.columns:
-            out[key] = [x for x in df[key]]
+            out[key] = [float(x) for x in df[key]]
 
-    # if 'color' in df.columns:
-    #     out['color'] = [x for x in df.color]
-    #
-    # if 'alpha' in df.columns:
-    #     out['alpha'] = [x for x in df.alpha]
-    #
-    # if 'id' in df.columns:
-    #     out['id'] = [x for x in df.id]
+    if 'color' in df.columns:
+        out['color'] = [x for x in df.color]
 
     return out
 
