@@ -17,7 +17,7 @@ from bokeh.resources import Resources
 from bokeh.templates import RESOURCES
 
 from flask import render_template, request
-# import flask_app import app
+
 import utils
 from utils import create_output
 
@@ -31,31 +31,38 @@ ap_routes = utils.get_routes(airport)
 ap_routes_source = ColumnDataSource(ap_routes, tags=['routes_source'])
 all_airports = ColumnDataSource(create_output(utils.airports), tags=['main_source'])
 
+
 @simpleapp()
 def app():
     # retrieve the theme to be used..
-    theme = request.args.get('theme', 'default')
+    theme = 'default' #request.args.get('theme', 'default')
 
     # create plot object and add all it's objects
-    plot = figure(title="Flights", plot_width=800, plot_height=500,
+    plot = figure(title="Flights", plot_width=800, plot_height=600,
                   tools="pan,box_zoom,box_select,tap,resize,reset")
     ui.create_airport_map(plot, ap_routes_source, all_airports, theme=theme)
 
-    info_txt = PreText(text=airport['summary'], width=300)
+    info_txt = PreText(text=airport['summary'], width=300, height=250)
 
+    dest_sources = ColumnDataSource(utils.create_dests_source(airport))
+    starburst = ui.create_starburst(ap_routes_source, dest_sources, theme=theme)
     return {
         'main_map': plot,
         'info_txt': info_txt,
+        'starburst': starburst,
         }
 
 @app.layout
 def stock2_layout(app):
-    app = AppHBox(app=app, children=['main_map', 'info_txt'])
+    right = AppVBox(app=app, children=['info_txt', 'starburst'])
+    app = AppHBox(app=app, children=['main_map', right])
     return app
 
 @app.update([({'tags' : 'main_source'}, ['selected'])])
 def update_selection(ticker1, ticker2, app):
     # select the sources we want to change uppon selection
+    theme = 'default'
+
     source = app.select_one({'tags' : 'main_source'})
     routes_source = app.select_one({'tags' : 'routes_source'})
 
@@ -71,8 +78,12 @@ def update_selection(ticker1, ticker2, app):
     # update the summary text
     app.objects['info_txt'].text = airport['summary']
 
+    dest_sources = ColumnDataSource(utils.create_dests_source(airport))
+    starburst = ui.create_starburst(routes_source, dest_sources, theme=theme)
+
     return {
         'info_txt': app.objects['info_txt'],
+        'starburst': starburst,
     }
 
 app.route("/dashboard")

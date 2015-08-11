@@ -1,6 +1,8 @@
 import pandas as pd
 import world_countries as wc
 
+SUMMARY_KEYS = ['name', 'city', 'country', 'iata', 'icao', 'tz_db', 'alt']
+
 airport_keys = ['id', 'name', 'city', 'country', 'iata', 'icao', 'lat',
                 'lng', 'alt', 'dst', 'tz', 'tz_db']
 route_keys = ['airline', 'id', 'source_ap', 'source_ap_id',
@@ -21,6 +23,9 @@ dests = set([int(sid)for sid in routes.dest_ap_id if sid.isdigit()])
 active_ap_ids = sources.union(dests)
 active_airports = airports[airports.id.isin(map(int, active_ap_ids))]
 ghost_airports = airports[~airports.id.isin(active_ap_ids)]
+
+out_routes = routes.groupby('source_ap_id').count().sort('id', ascending=False)
+in_routes = routes.groupby('dest_ap_id').count().sort('id', ascending=False)
 
 
 def get_worldmap():
@@ -80,27 +85,46 @@ def alpha_mapper(airport, destinations):
 
 def radius_mapper(airport, destinations):
     def _(id):
-        if id in airport['airport'].id.values:
-            return 0.6
-        elif id in destinations:
+        try:
+            ap_out_routes = out_routes.id[str(id)]
+        except KeyError:
+            ap_out_routes = 0
+
+        if ap_out_routes > 300:
+            return 1.5
+        elif ap_out_routes > 200:
+            return 1
+        elif ap_out_routes > 100:
+            return 0.8
+        elif ap_out_routes > 50:
             return 0.5
-        elif id in active_ap_ids:
+        elif ap_out_routes > 10:
             return 0.2
         else:
             return 0.1
+        # if id in airport['airport'].id.values:
+        #     return 0.6
+        # elif id in destinations:
+        #     return 0.5
+        # elif id in active_ap_ids:
+        #     return 0.2
+        # else:
+        #     return 0.1
 
     return _
 
 def get_airport_data(airport_id, airports):
     main_ap = airports[airports.id == int(airport_id)]
     connections = routes[routes.source_ap_id == airport_id].sort('dest_ap_id')
-    destinations_id = set([int(x) for x in connections.dest_ap_id.values])
+    destinations_id = set([int(x) for x in connections.dest_ap_id.values if x.isdigit()])
+
+    dmain_ap = dict(main_ap)
     airport = {
         'airport': main_ap,
         'connections': connections,
         'destinations': airports[airports.id.isin(destinations_id)],
         'summary': "Selected Airport:\n\n%s" % "\n".join(
-            ["%s: %s" % (k, v.values[0]) for k, v in dict(main_ap).items()]
+            ["%s: %s" % (k, dmain_ap[k].values[0]) for k in SUMMARY_KEYS]
         )
     }
 
@@ -115,17 +139,10 @@ def get_airport_data(airport_id, airports):
 
     # import pdb; pdb.set_trace()
     # update the airports destinations df as we've added color and alpha
-    airport['destinations'] = airports[airports.id.isin(map(int, connections.dest_ap_id))]
+    conns = set([int(x) for x in connections.dest_ap_id.values if x.isdigit()])
+    airport['destinations'] = airports[airports.id.isin(conns)]
 
     return airport
-
-# xs, ys = [], []
-# main_ap = airports[airports.id == 3682]
-
-# for iata, lng, lat in zip(conn_dests.iata, conn_dests.lng, conn_dests.lat):
-#     xs.append([main_ap.lng, lng])
-#     ys.append([main_ap.lat, lat])
-# #     labels.append([main_ap.lat, lat])
 
 def get_routes(airport):
     xs, ys = [], []
@@ -154,3 +171,8 @@ def create_output(df):
     return out
 
 
+def create_dests_source(airport):
+    dest_sources = create_output(airport['destinations'])
+    dest_sources['radius'] = [x*8 for x in dest_sources['radius']]
+    dest_sources['alpha'] = [0.4 for x in dest_sources['radius']]
+    return dest_sources

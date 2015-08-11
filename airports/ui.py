@@ -1,9 +1,11 @@
+from __future__ import print_function
 from collections import OrderedDict
 from bokeh.models.tools import HoverTool, TapTool
 from bokeh.models.glyphs import Circle, Patches
 from bokeh.models.sources import ColumnDataSource
 from bokeh.models.actions import Callback
-
+from bokeh.plotting import figure, show
+import math
 
 def get_theme(theme):
     rules = {
@@ -125,3 +127,57 @@ def create_airport_map(plot, ap_routes, isolated_aps, theme='default'):
     for k, v in rules.items():
         if k not in ['map_line_color', 'map_color']:
             setattr(plot, k, v)
+
+def create_starburst(ap_routes, isolated_aps, theme='default'):
+    import utils
+
+    rules = get_theme(theme)
+    connections_color = rules.pop('connections_color')
+
+    dists = []
+    xs = []
+    ys = []
+    for (ox, px), (oy, py) in zip(ap_routes.data['xs'], ap_routes.data['ys']):
+        dist = math.hypot(px - ox, py - oy)
+        dists.append(dist)
+
+    max_radius = max(dists)
+
+    plot = figure(title="", plot_width=300, plot_height=300,
+                  # tools="pan,box_zoom,box_select,tap,resize,reset"
+                  x_range = [ox-max_radius, ox+max_radius],
+                  y_range = [oy-max_radius, oy+max_radius],
+    )
+
+    chunk = max_radius / 5.
+    for i in range(5):
+        rad = max_radius - chunk * i
+        plot.circle([ox], [oy], radius=rad, fill_color=None, line_color="lightgrey")
+
+    plot.multi_line('xs', 'ys', color=connections_color, line_width=1,
+                    line_alpha=0.4, source=ap_routes)
+
+
+    circle = Circle(x='lng', y="lat", fill_color='color', line_color='color',
+                    fill_alpha='alpha', line_alpha='alpha', radius='radius')
+    isol_aps_renderer = plot.add_glyph(isolated_aps, circle, selection_glyph=circle,
+                                       nonselection_glyph=circle)
+
+    plot.axis.minor_tick_in = None
+    plot.axis.minor_tick_out = None
+    plot.axis.major_tick_in = None
+    plot.axis.major_tick_out = None
+
+    plot.axis.major_label_text_font_size="0pt"
+
+    plot.axis.major_tick_line_color = None
+    plot.axis.major_label_text_color = None
+    plot.axis.axis_line_color = None
+
+    plot.axis.major_label_text_font_style = "italic"
+
+    plot.border_fill = "whitesmoke"
+    plot.min_border = 0
+
+    return plot
+
