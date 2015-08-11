@@ -99,6 +99,9 @@ def get_airport_data(airport_id, airports):
         'airport': main_ap,
         'connections': connections,
         'destinations': airports[airports.id.isin(destinations_id)],
+        'summary': "Selected Airport:\n\n%s" % "\n".join(
+            ["%s: %s" % (k, v.values[0]) for k, v in dict(main_ap).items()]
+        )
     }
 
     make_color = color_mapper(airport, destinations_id)
