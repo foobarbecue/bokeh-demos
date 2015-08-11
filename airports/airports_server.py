@@ -9,7 +9,7 @@ from bokeh.plotting import figure, show
 from bokeh.io import output_file
 from bokeh.models.sources import ColumnDataSource, AjaxDataSource
 from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText,
-                                  Select, AppHBox, AppVBox, AppVBoxForm)
+                                  Select, AppHBox, AppVBox, AppVBoxForm, AutocompleteInput)
 
 
 from bokeh.embed import components
@@ -36,6 +36,8 @@ all_airports = ColumnDataSource(create_output(utils.airports), tags=['main_sourc
 def app():
     # retrieve the theme to be used..
     theme = 'default' #request.args.get('theme', 'default')
+
+    AutocompleteInput
 
     # create plot object and add all it's objects
     plot = figure(title="Flights", plot_width=800, plot_height=600,

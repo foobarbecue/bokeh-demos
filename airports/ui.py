@@ -144,7 +144,7 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
     max_radius = max(dists)
 
     plot = figure(title="", plot_width=300, plot_height=300,
-                  # tools="pan,box_zoom,box_select,tap,resize,reset"
+                  tools="pan,box_zoom,box_select,tap,hover,resize,reset",
                   x_range = [ox-max_radius, ox+max_radius],
                   y_range = [oy-max_radius, oy+max_radius],
     )
@@ -178,6 +178,18 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
 
     plot.border_fill = "whitesmoke"
     plot.min_border = 0
+
+
+    hover = plot.select(dict(type=HoverTool))
+    if hover:
+        hover.tooltips = OrderedDict([
+            ("ID", "@id"),
+            ("Name", "@name"),
+            ("city", "@city"),
+            ("country", "@country"),
+        ])
+        hover.renderers = [isol_aps_renderer]
+
 
     return plot
 

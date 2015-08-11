@@ -175,4 +175,8 @@ def create_dests_source(airport):
     dest_sources = create_output(airport['destinations'])
     dest_sources['radius'] = [x*8 for x in dest_sources['radius']]
     dest_sources['alpha'] = [0.4 for x in dest_sources['radius']]
+    dest_sources['name'] = [airports.name[x] for x in dest_sources['id']]
+    dest_sources['city'] = [airports.city[x] for x in dest_sources['id']]
+    dest_sources['country'] = [airports.country[x] for x in dest_sources['id']]
+
     return dest_sources
