@@ -17,6 +17,9 @@ routes = pd.read_csv('data/routes.dat', names=route_keys)
 airports['color'] = ['green' for x in airports.id]
 airports['alpha'] = [1. for x in airports.id]
 airports['radius'] = [0.3 for x in airports.id]
+airports['lname'] = [x.lower() for x in airports.name]
+airports['lcity'] = [x.lower() for x in airports.city]
+airports['liata'] = [str(x).lower() for x in airports.iata]
 
 sources = set([int(sid)for sid in routes.source_ap_id if sid.isdigit()])
 dests = set([int(sid)for sid in routes.dest_ap_id if sid.isdigit()])
@@ -113,6 +116,13 @@ def radius_mapper(airport, destinations):
 
     return _
 
+
+def search_airports(txt, airports):
+    return airports[airports.lname.str.contains(txt) |
+                    airports.lcity.str.contains(txt) |
+                    airports.liata.str.contains(txt)]
+
+
 def get_airport_data(airport_id, airports):
     main_ap = airports[airports.id == int(airport_id)]
     connections = routes[routes.source_ap_id == airport_id].sort('dest_ap_id')
@@ -155,7 +165,10 @@ def get_routes(airport):
 
     return {'xs': xs, 'ys': ys}
 
-def create_output(df):
+def create_output(df, extra_keys=None):
+    if extra_keys is None:
+        extra_keys = []
+
     out = {
         'lng': [float(x) for x in df.lng],
         'lat': [float(x) for x in df.lat],
@@ -165,18 +178,22 @@ def create_output(df):
         if key in df.columns:
             out[key] = [float(x) for x in df[key]]
 
+    for key in extra_keys:
+        if key in df.columns:
+            out[key] = [x for x in df[key]]
+
     if 'color' in df.columns:
         out['color'] = [x for x in df.color]
 
     return out
 
 
-def create_dests_source(airport):
+def create_dests_source(airport, airports):
     dest_sources = create_output(airport['destinations'])
     dest_sources['radius'] = [x*8 for x in dest_sources['radius']]
     dest_sources['alpha'] = [0.4 for x in dest_sources['radius']]
-    dest_sources['name'] = [airports.name[x] for x in dest_sources['id']]
-    dest_sources['city'] = [airports.city[x] for x in dest_sources['id']]
-    dest_sources['country'] = [airports.country[x] for x in dest_sources['id']]
+    dest_sources['name'] = [airports.name[x] for x in dest_sources['id'] if x in airports.name]
+    dest_sources['city'] = [airports.city[x] for x in dest_sources['id'] if x in airports.city]
+    dest_sources['country'] = [airports.country[x] for x in dest_sources['id'] if x in airports.country]
 
     return dest_sources
