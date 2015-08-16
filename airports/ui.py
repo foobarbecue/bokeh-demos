@@ -240,8 +240,6 @@ def create_dlg_airports_list(source):
         code="""
         ind = sr.get('selected')['1d']['indices'][0];
         data = sr.get('data');
-        console.log("FIRED!");
-        console.log(ind);
 
         url = "/select_airport?id=" + data.id[ind];
         xhr = Bokeh.$.ajax({
