@@ -291,12 +291,6 @@ def create_legend(source, theme):#, value_string, color_string, bar_color):
     # legend = Text(x=5, y=90, text=['Legend:'], x_offset = 15, **pss.FONT_PROPS_MD)
 
     country = Text(x='x', y='y', text='name', x_offset = 15,  y_offset=5, **pss.FONT_PROPS_SM)
-    # percent = Text(x=15, y=10, text=value_string, text_color=color_string, **FONT_PROPS_LG)  # nopep8
-    # percent_sign = Text(x=69, y=10, text=['%'], text_color=color_string, **FONT_PROPS_LG)  # nopep8
-    # line_one = Text(x=90, y=28, text=['of people had'], **FONT_PROPS_SM)
-    # line_two_p1 = Text(x=90, y=14, text=['access in'], **FONT_PROPS_SM)
-    # line_two_p2 = Text(x=136, y=14, text='year', **FONT_PROPS_SM)
-    # plot.add_glyph(source, legend)
     plot.add_glyph(source, country, selection_glyph=country)
 
     rules = get_theme(theme)
@@ -312,22 +306,6 @@ def create_legend(source, theme):#, value_string, color_string, bar_color):
     # hover = HoverTool(plot=plot, renderers=[rect_renderer], tooltips=tooltips)
     plot.tools.extend([tap])
 
-    # plot.add_glyph(source, percent, selection_glyph=percent)
-    # plot.add_glyph(source, Text(), selection_glyph=percent_sign)
-    # plot.add_glyph(line_one)
-    # plot.add_glyph(line_two_p1)
-    # plot.add_glyph(source, Text(), selection_glyph=line_two_p2)
-
-    # Add the orange box with year
-    # shadow = Triangle(x=150, y=109, size=25, fill_color=ORANGE_SHADOW, line_color=None)  # nopep8
-    # plot.add_glyph(shadow)
-    # # Add the blue bar
-    # rect = Rect(x=75, y=99, width=150, height=5, fill_color=bar_color, line_color=None)  # nopep8
-    # plot.add_glyph(rect)
-    # box = Rect(x=200, y=100, width=100, height=40, fill_color=ORANGE, line_color=None)  # nopep8
-    # plot.add_glyph(box)
-    # year = Text(x=160, y=85, text='year', text_font_size='18pt', text_color="#FFFFF", text_font_style="bold")  # nopep8
-    # plot.add_glyph(source, Text(), selection_glyph=year)
 
     for k, v in rules.items():
         if k not in ['map_line_color', 'map_color', 'connections_color']:
