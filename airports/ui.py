@@ -60,7 +60,7 @@ def create_airport_map(plot, ap_routes, isolated_aps, theme='default'):
 
     # Using PLOTTING interface
     connections_color = rules.pop('connections_color')
-    plot.multi_line('xs', 'ys', color=connections_color, line_width=1,
+    plot.multi_line('xs', 'ys', color='color', line_width=1,
                     line_alpha=0.4, source=ap_routes)
 
     # # Using GLYPH interface
@@ -164,7 +164,7 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
         rad = max_radius - chunk * i
         plot.circle([ox], [oy], radius=rad, fill_color=None, line_color="lightgrey")
 
-    plot.multi_line('xs', 'ys', color=connections_color, line_width=1,
+    plot.multi_line('xs', 'ys', color='color', line_width=1,
                     line_alpha=0.4, source=ap_routes)
 
 
@@ -200,6 +200,10 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
         ])
         hover.renderers = [isol_aps_renderer]
 
+
+    for k, v in rules.items():
+        if k not in ['map_line_color', 'map_color']:
+            setattr(plot, k, v)
 
     return plot
 
@@ -264,8 +268,12 @@ def create_dlg_airports_list(source):
         'new_annotation_options': options
     }
 
+    for k, v in rules.items():
+        if k not in ['map_line_color', 'map_color', 'connections_color']:
+            setattr(plot, k, v)
 
-def create_legend(source):#, value_string, color_string, bar_color):
+
+def create_legend(source, theme):#, value_string, color_string, bar_color):
     # Plot and axes
     xdr = Range1d(0, 220)
     ydr = Range1d(0, 120)
@@ -280,7 +288,7 @@ def create_legend(source):#, value_string, color_string, bar_color):
         **pss.PLOT_FORMATS
     )
     # Add the writing
-    legend = Text(x=5, y=150, text=['Legend:'], x_offset = 10,  y_offset=5, **pss.FONT_PROPS_LG)
+    # legend = Text(x=5, y=90, text=['Legend:'], x_offset = 15, **pss.FONT_PROPS_MD)
 
     country = Text(x='x', y='y', text='name', x_offset = 15,  y_offset=5, **pss.FONT_PROPS_SM)
     # percent = Text(x=15, y=10, text=value_string, text_color=color_string, **FONT_PROPS_LG)  # nopep8
@@ -288,14 +296,21 @@ def create_legend(source):#, value_string, color_string, bar_color):
     # line_one = Text(x=90, y=28, text=['of people had'], **FONT_PROPS_SM)
     # line_two_p1 = Text(x=90, y=14, text=['access in'], **FONT_PROPS_SM)
     # line_two_p2 = Text(x=136, y=14, text='year', **FONT_PROPS_SM)
-    plot.add_glyph(source, legend)
+    # plot.add_glyph(source, legend)
     plot.add_glyph(source, country, selection_glyph=country)
+
+    rules = get_theme(theme)
 
     circle = Circle(x='x', y="y", fill_color='green', line_color='green',
                     # fill_alpha='alpha', line_alpha='alpha',
                     radius='radius')
     isol_aps_renderer = plot.add_glyph(source, circle, selection_glyph=circle,
                                        nonselection_glyph=circle)
+
+
+    tap = TapTool(plot=plot)#, renderers=[rect_renderer])
+    # hover = HoverTool(plot=plot, renderers=[rect_renderer], tooltips=tooltips)
+    plot.tools.extend([tap])
 
     # plot.add_glyph(source, percent, selection_glyph=percent)
     # plot.add_glyph(source, Text(), selection_glyph=percent_sign)
@@ -313,5 +328,9 @@ def create_legend(source):#, value_string, color_string, bar_color):
     # plot.add_glyph(box)
     # year = Text(x=160, y=85, text='year', text_font_size='18pt', text_color="#FFFFF", text_font_style="bold")  # nopep8
     # plot.add_glyph(source, Text(), selection_glyph=year)
+
+    for k, v in rules.items():
+        if k not in ['map_line_color', 'map_color', 'connections_color']:
+            setattr(plot, k, v)
 
     return plot

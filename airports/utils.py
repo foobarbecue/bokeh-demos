@@ -128,15 +128,23 @@ def get_airport_data(airport_id, airports):
     connections = routes[routes.source_ap_id == airport_id].sort('dest_ap_id')
     destinations_id = set([int(x) for x in connections.dest_ap_id.values if x.isdigit()])
 
+
+    out_connections = routes[routes.dest_ap_id == airport_id].sort('source_ap_id')
+    origins_id = set([int(x) for x in out_connections.source_ap_id.values if x.isdigit()])
+
     dmain_ap = dict(main_ap)
     airport = {
         'airport': main_ap,
         'connections': connections,
         'destinations': airports[airports.id.isin(destinations_id)],
+        'out_connections': out_routes,
+        'origins': airports[airports.id.isin(origins_id)],
         'summary': "Selected Airport:\n\n%s" % "\n".join(
             ["%s: %s" % (k, dmain_ap[k].values[0]) for k in SUMMARY_KEYS]
         )
     }
+    airport['summary'] += "\nIncoming routes: %s" % len(origins_id)
+    airport['summary'] += "\nOutgoing routes: %s" % len(destinations_id)
 
     make_color = color_mapper(airport, destinations_id)
     airports['color'] = [make_color(xid) for xid in airports.id]
@@ -155,15 +163,22 @@ def get_airport_data(airport_id, airports):
     return airport
 
 def get_routes(airport):
-    xs, ys = [], []
+    xs, ys, color = [], [], []
     main_ap = airport['airport']
     conn_dests = airport['destinations']
 
-    for iata, lng, lat in zip(conn_dests.iata, conn_dests.lng, conn_dests.lat):
+    print conn_dests.columns, airport['airport'].country
+    country = airport['airport'].country.values[0]
+    for iata, lng, lat, conn_country in zip(conn_dests.iata, conn_dests.lng, conn_dests.lat, conn_dests.country):
         xs.append([float(main_ap.lng), float(lng)])
         ys.append([float(main_ap.lat), float(lat)])
 
-    return {'xs': xs, 'ys': ys}
+        if country == conn_country:
+            color.append('red')
+        else:
+            color.append('black')
+
+    return {'xs': xs, 'ys': ys, "color": color}
 
 def create_output(df, extra_keys=None):
     if extra_keys is None:

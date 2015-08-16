@@ -121,3 +121,8 @@ td.bk-tooltip-row-value {
     font-size: 0.8em;
     text-align: left;
 }
+
+button.bk-bs-btn-default{
+    background-color: #8B7D6B;
+    color: #ffffff;
+}
