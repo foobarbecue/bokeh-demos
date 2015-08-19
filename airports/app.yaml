@@ -1,0 +1,163 @@
+name: airports
+title: Airports Demo
+
+
+ui:
+  net_map: !figure
+    figure:
+        width: 1000
+        height: 580
+        tools: pan,box_zoom,tap,resize,reset
+        toolbar_location: right
+
+  freq_map: !figure
+    figure:
+        width: 1100
+        height: 580
+        tools: pan,box_zoom,tap,hover,resize,reset
+
+  searchbox: !TextInput
+    name: searchbox
+
+  info_txt: !PreText
+    name: info_txt
+    width: 200
+    height: 250
+
+  dlg_info: !Dialog
+    name: dlg_info
+    title: Selected Airport Info
+#    content: "{{ HBox info_txt starburst }}"
+    visible: False
+
+  freq_tab: !Panel
+    name: freq_tab
+    title: Flight Frequency
+
+  network_tab: !Panel
+    name: network_tab
+    title: Flight Networks
+
+  tabs: !Tabs
+    name: tabs
+
+  app_title: !Paragraph
+    name: app_title
+    text: World Flight Frequency
+    width: 450
+    height: 0
+
+  top_space_mid: !Paragraph
+    name: top_space_mid
+    width: 150
+    height: 0
+
+  search_space_mid: !Paragraph
+    name: search_space_mid
+    width: 30
+    height: 0
+
+  sidebar_space_mid: !Paragraph
+    name: search_space_mid
+    height: 150
+
+  sidebar_net_space_mid: !Paragraph
+    name: sidebar_net_space_mid
+    height: 350
+
+#widgets:
+  search_button: !Button
+    label: search
+    name: search_button
+
+  cancel_search: !Button
+    label: cancel
+    name: cancel_search
+
+  select_city_size: !CheckboxGroup
+    labels: ['1', '1-10', '10-50', '50-100', '100-200', '200-300', '>300']
+    name: select_city_size
+    inline: True
+
+  btn_selected_airport: !Button
+    label: "TEMP"
+    name: btn_selected_airport
+    type: primary
+
+
+
+layout:
+  top: !AppHBox
+    name: top
+    children: ['app_title', 'btn_selected_airport', 'top_space_mid', 'searchbox', 'search_space_mid', 'search_button', 'cancel_search']
+    height: 30
+
+  sidebar: !AppVBox
+    name: sidebar
+    children: ['sidebar_space_mid', 'legend', 'alpha_legend']
+
+  sidebar_net: !AppVBox
+    name: sidebar_net
+    children: ['sidebar_net_space_mid', 'route_freq_legend']
+
+  net_page: !AppHBox
+    name: net_page
+    children: ['sidebar_net', 'net_map']
+
+  freq_map_box: !AppHBox
+    name: freq_map_box
+    children: ['sidebar', 'freq_map']
+
+  freq_tab: !app_object
+    name: freq_tab
+    child: 'freq_map_box'
+
+  network_tab: !app_object
+    name: network_tab
+    child: 'net_page'
+
+  dlg_info: !app_object
+    name: dlg_info
+    content: "{{ HBox info_txt starburst }}"
+
+#    network_tab = app.objects['network_tab']
+#    network_tab.child = AppHBox(app=app, children=['freq_map'])
+
+  tabs: !app_object
+    name: tabs
+    tabs: ['freq_tab', 'network_tab']
+
+  app: !AppVBox
+    name: app
+    children: ['dlg_airports_found', 'dlg_info', top, tabs]
+
+
+#
+#ui:
+#  TextInput:
+#    name: searchbox
+#    title: search airport
+#
+#  PreText:
+#    name: info_txt
+#    width=200
+#    height=250
+#
+#  Dialog:
+#    name: dlg_info
+#    title: Selected Airport Info
+#    content=HBox(info_txt)
+#    visible=False
+#
+#  Panel:
+#    name: freq_tab
+#    title: Frequency
+#
+#  Panel:
+#    name: network_tab
+#    title: Networks
+#
+#  Tabs:
+#    name: main_tab
+##    tabs: [network_tab, freq_tab]
+#

@@ -65,3 +65,24 @@ necessary to zoom in an are to help Tap tool identify the airport to select.
 To run the script execute:
 
 >> python airports_dashboard.py
+
+
+Airports Demo
+=============
+
+This example shows a rich interactive dashboard application with customized 
+theme and layout
+
+To run the script in one shell execute:
+
+>> python flash_server.py
+
+and on a second shell execute:
+
+>> bokeh-server --script airports_server_yaml.py
+
+Access the demo at:
+
+http://127.0.0.1:5050/yaml
+
+Have Fun! :-)

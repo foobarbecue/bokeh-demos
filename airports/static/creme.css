@@ -126,3 +126,41 @@ button.bk-bs-btn-default{
     background-color: #8B7D6B;
     color: #ffffff;
 }
+
+input.bk-widget-form-input{
+    height: 20px;
+    display: inline;
+     width: 100px;
+}
+
+.fixedContainer {
+    /*background-color:#ddd;*/
+    position: fixed;
+    padding: 2em;
+    left: 10px;
+    top: 0%;
+    /*transform: translateX(-50%);*/
+}
+
+ul.bk-bs-nav-tabs>li.bk-bs-active>a, ul.bk-bs-nav-tabs>li.bk-bs-active>a:hover, ul.bk-bs-nav-tabs>li.bk-bs-active>a:focus {
+    color: #555;
+    background-color: #FEFFEF;
+    border: 1px solid #ddd;
+    border-bottom-color: transparent;
+    cursor: default;
+    text-decoration: none;
+}
+
+ul.bk-bs-nav-tabs>li>a {
+    margin-right: 2px;
+    line-height: 1.42857143;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+    text-decoration: none;
+    color: #555;
+}
+
+div.bk-hbox p{
+    margin-top: 0.2em;
+    font-size: 1.5em;
+}

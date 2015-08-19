@@ -10,7 +10,7 @@ from bokeh.io import output_file
 from bokeh.models.sources import ColumnDataSource, AjaxDataSource
 from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText, CheckboxGroup,
                                   Select, AppHBox, AppVBox, AppVBoxForm,
-                                    Paragraph, Dialog,
+                                    Paragraph, Dialog, Panel, Tabs,
                                   AutocompleteInput, Button, TextInput)
 
 
@@ -26,6 +26,7 @@ from utils import create_output
 
 from bokeh.simpleapp import simpleapp
 from bokeh.server.app import bokeh_app
+from bokeh.server.crossdomain import crossdomain
 
 from bokeh.plotting import curdoc, cursession
 
@@ -44,12 +45,22 @@ airports_found_source = ColumnDataSource(tags=['airports_found_source'])
 
 legend_source = ColumnDataSource(
     {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
-            'x': [25] * 7,
-            'y': [31, 47, 59, 70, 80, 90, 100],
+            'x': [35] * 7,
+            'y': [13, 26, 37, 46, 53, 61, 68],
             'radius': [8*x for x in [1.5, 1, 0.8, 0.5, 0.3, 0.2, 0.1]]
     },
     tags=['legend_source']
 )
+
+apha_legend_source = ColumnDataSource(
+    {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
+            'x': [35] * 7,
+            'y': [x * 10 for x in range(1, 8)],
+            'alpha': [x * 0.1 for x in range(1, 8)],
+    },
+    tags=['legend_source']
+)
+
 
 # Widgets
 btn_search = Button(label='search', name='search_button')
@@ -73,6 +84,7 @@ btn_selected_airport = Button(label=airport['airport'].name.values[0],
 # select_city_size = Select(name='select_city_size', value='all',
 #                           options=['1', '1-10', '10-50', '50-100', '100-200', '200-300', '>300'])
 
+yapp = ui.load_from_yaml('app.yaml')
 
 @simpleapp(btn_search, btn_cancel_search, select_city_size, label_city_filter, btn_selected_airport,
            cumulate_paths)
@@ -80,51 +92,57 @@ def app(search_button):
     # retrieve the theme to be used..
     theme = 'creme' #request.args.get('theme', 'default')
 
-    searchbox = TextInput()#completions=[x for x in utils.airports.name.values])
-
     # create plot object and add all it's objects
-    plot = figure(title="Flights", plot_width=900, plot_height=600,
+    plot = figure(title="", plot_width=1000, plot_height=580,
                   tools="pan,box_zoom,box_select,tap,resize,reset")
     ui.create_airport_map(plot, ap_routes_source, all_airports, theme=theme)
 
-    info_txt = PreText(text=airport['summary'], width=200, height=250)
-    dlg_info = Dialog(title='Selected Airport Info', #buttons=[confirm_chart_button],
-                        content=HBox(info_txt), visible=False)
+    freq_map = figure(title="Flights", plot_width=1000, plot_height=580,
+                  tools="pan,box_zoom,box_select,tap,resize,reset")
+    ui.create_airport_map(freq_map, ap_routes_source, all_airports, theme=theme)
 
     dest_sources = ColumnDataSource(utils.create_dests_source(airport, utils.airports))
     starburst = ui.create_starburst(ap_routes_source, dest_sources, theme=theme)
 
 
-    legend = ui.create_legend(legend_source, theme)
+    legend = ui.create_size_legend(legend_source, theme)
+    alpha_legend = ui.create_alpha_legend(apha_legend_source, theme)
     objects = {
         'main_map': plot,
-        'info_txt': info_txt,
         'starburst': starburst,
-        'searchbox': searchbox,
-        'dlg_info': dlg_info,
         'legend': legend,
+        'alpha_legend': alpha_legend,
+        'freq_map': freq_map,
     }
+    objects.update(yapp['ui'])
     objects.update(ui.create_dlg_airports_list(airports_found_source))
+
+    objects['info_txt'].text = airport['summary']
+
     return objects
 
 @app.layout
 def stock2_layout(app):
-    search = AppHBox(app=app, children=['search_button', 'cancel_search'])
-    sidebar = AppVBox(app=app, children=['searchbox', search,
-                                         # Paragraph(height=20),
-                                         # 'label_city_filter',
-                                         # 'select_city_size',
-                                         # 'cumulate_paths',
-                                         # Paragraph(height=10),
-                                         'btn_selected_airport',
-                                         Paragraph(height=1),
-                                         'legend',
-                                         # Paragraph(height=5),
-                                         # 'info_txt',
-                                         'starburst'])
-    app = AppHBox(app=app, children=['dlg_airports_found', 'dlg_info',
-                                     sidebar, 'main_map'])
-    return app
+    layout = yapp['layout']
+    for k, v in layout.items():
+        if k != 'app' and isinstance(v, (AppHBox, AppVBox)):
+            ui.add_app_box(v, app, layout)
+
+    for k, v in layout.items():
+        if k != 'app' and isinstance(v, Panel):
+            v.child = ui.get_obj(v.child, app, layout)
+
+    for k, v in layout.items():
+        if k != 'app' and isinstance(v, Tabs):
+            v.tabs = [ui.get_obj(x, app, layout, True) for x in v.tabs]
+
+    for k, v in layout.items():
+        if k != 'app' and isinstance(v, Dialog):
+            v.content = ui.get_obj(v._content, app, layout)
+
+    ui.add_app_box(layout['app'], app, layout)
+
+    return layout['app']
 
 @app.update([({'tags' : 'main_source'}, ['selected'])])
 def update_selection(ticker1, ticker2, app):
@@ -160,17 +178,6 @@ def update_legend_selection(ticker1, ticker2, app):
         if float(value) == radius_to_check:
             main_source.data['color'][i] = None
 
-    # return {}
-    # routes_source = app.select_one({'tags' : 'routes_source'})
-    #
-    # # get the selected airport ID and change the selected airport accordingly
-    # id_ = source.selected['1d']['indices'][0]
-    # airport_id = str(int(source.data['id'][id_]))
-    # airport = utils.get_airport_data(airport_id, utils.airports)
-    #
-    # objs = update_current_airport(airport_id, source, routes_source, app, theme)
-    #
-    # return objs
 
 @app.update([({'name' : 'search_button'}, ['clicks'])])
 def on_search(searchbox, app):
@@ -192,7 +199,10 @@ def on_search(searchbox, app):
 @app.update([({'name' : 'btn_selected_airport'}, ['clicks'])])
 def on_selected_airport(searchbox, app):
     new_dlg = Dialog(title='Selected Airport Info', #buttons=[confirm_chart_button],
-                        content=HBox(app.objects['info_txt']), visible=True)
+                        content=HBox(
+                            app.objects['info_txt'],
+                            app.objects['starburst'],
+                            ), visible=True)
     return {'dlg_info': new_dlg}
 
 
@@ -216,6 +226,7 @@ def on_confirm_airport_selection(searchbox, app):
 
     source = app.select_one({'tags' : 'main_source'})
     routes_source = app.select_one({'tags' : 'routes_source'})
+
     objects = update_current_airport(selected_aiport_id, source, routes_source, app, theme)
     app.objects['searchbox'].value = ''
     objects['searchbox'] = app.objects['searchbox']
@@ -243,11 +254,14 @@ def update_current_airport(aiport_id, source, routes_source, app, theme):
     }
 
 
-app.route("/dashboard")
+app.route("/")
 
-@bokeh_app.route("/select_airport")
+
+@bokeh_app.route("/select_airport", methods=['GET', 'OPTIONS'])
+@crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def get_airport_selection():
     global selected_aiport_id
+
     selected_aiport_id = request.args['id']
     return jsonify({"msg": "OK"})
 

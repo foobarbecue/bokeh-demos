@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import world_countries as wc
 
 SUMMARY_KEYS = ['name', 'city', 'country', 'iata', 'icao', 'tz_db', 'alt']
@@ -31,6 +32,76 @@ out_routes = routes.groupby('source_ap_id').count().sort('id', ascending=False)
 in_routes = routes.groupby('dest_ap_id').count().sort('id', ascending=False)
 
 
+population = pd.read_csv('data/global-city-population-estimates.csv', delimiter=';', encoding = "utf8")[:400]
+population['population'] = population['2015']
+# population['color'] = ['green' for x in airports.id]
+# population['alpha'] = [1. for x in airports.id]
+
+
+def pop_radius_mapper(pop):
+    if pop > 30000:
+        return 2
+    elif pop > 25000:
+        return 1.5
+    elif pop > 20000:
+        return 1
+    elif pop > 15000:
+        return 0.8
+    elif pop > 10000:
+        return 0.5
+    elif pop > 5000:
+        return 0.3
+    elif pop > 1000:
+        return 0.2
+    else:
+        return 0.1
+
+population['radius'] = [2*pop_radius_mapper(x) for x in population['2015']]
+
+cities = airports.city.values
+city_fligh_alpha = airports.alpha
+
+population['color'] = ['#cbdb29' if city in cities else 'red' for city in population['city']]
+# import pdb; pdb.set_trace()
+
+
+cities = airports.groupby('city')
+
+not_found = []
+cities_ap_density = []
+cities_info = {}
+for city in population.city.values:
+    cities_info[city] = 0
+    if city in cities.groups:
+        for city_ap in cities.groups[city]:
+            ap = airports[airports.id==airports.id[city_ap]]
+            try:
+                cities_info[city] += out_routes.id[str(ap.id.values[0])]
+            except KeyError:
+                pass
+
+            try:
+                cities_info[city] += in_routes.id[str(ap.id.values[0])]
+            except KeyError:
+                pass
+
+        cities_ap_density.append(cities_info[city])
+    else:
+        cities_ap_density.append(-1)
+        not_found.append(city)
+
+print ("MISSING CITIES", not_found)
+
+population['routes'] = cities_ap_density
+population['pop_routes_ratio'] = [max(0, pop/float(city_routes)) for (pop,  city_routes) in
+                       zip(population['population'], population['routes'])]
+population['pop_routes_ratio'] = population['pop_routes_ratio'].replace([np.inf, -np.inf], np.nan)
+max_ratio = max(population['pop_routes_ratio'])
+population['alpha'] = [min((x/max_ratio)+0.1, 1) for x in population['pop_routes_ratio']]
+
+
+
+
 def get_worldmap():
     grpr = routes.groupby('source_ap_id').count().sort('id', ascending=False)
     countries_ap_grp = airports.groupby('country')
@@ -52,7 +123,7 @@ def get_worldmap():
         if not len(res):
             return 0
 
-        return min((float(res.name[0])/_max_aps) * 0.7, 0.9)
+        return max(0.3, min((float(res.name[0])/_max_aps) * 0.7, 1))
 
     worldmap['alpha'] = [get_alpha(country) for country in worldmap.name]
     worldmap['count'] = [get_count(country) for country in worldmap.name]
@@ -61,15 +132,21 @@ def get_worldmap():
 
 
 def color_mapper(airport, destinations):
-    def _(id):
+    def _(id, country=None):
         if id in airport['airport'].id.values:
             return "red"
         elif id in destinations:
-            return "green"
+            if country is None:
+                return "green"
+            elif country in airport['airport'].country.values:
+                return '#c28cbd'
+            else:
+                return '#29bdbc'
+
         elif id in active_ap_ids:
             return "black"
         else:
-            return "lightgrey"
+            return "black"
 
     return _
 
@@ -147,7 +224,7 @@ def get_airport_data(airport_id, airports):
     airport['summary'] += "\nOutgoing routes: %s" % len(destinations_id)
 
     make_color = color_mapper(airport, destinations_id)
-    airports['color'] = [make_color(xid) for xid in airports.id]
+    airports['color'] = [make_color(xid, xcountry) for xid, xcountry in zip(airports.id, airports.country)]
 
     make_alpha = alpha_mapper(airport, destinations_id)
     airports['alpha'] = [make_alpha(xid) for xid in airports.id]
@@ -167,16 +244,15 @@ def get_routes(airport):
     main_ap = airport['airport']
     conn_dests = airport['destinations']
 
-    print conn_dests.columns, airport['airport'].country
     country = airport['airport'].country.values[0]
     for iata, lng, lat, conn_country in zip(conn_dests.iata, conn_dests.lng, conn_dests.lat, conn_dests.country):
         xs.append([float(main_ap.lng), float(lng)])
         ys.append([float(main_ap.lat), float(lat)])
 
         if country == conn_country:
-            color.append('red')
+            color.append('#c28cbd')
         else:
-            color.append('black')
+            color.append('#29bdbc')
 
     return {'xs': xs, 'ys': ys, "color": color}
 
