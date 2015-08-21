@@ -5,8 +5,6 @@ from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText, DataTable,
                                   AppVBox, AppHBox, CheckboxGroup, Dialog,
                                   AutocompleteInput, Button, TextInput,
                                   Paragraph, Select,
-                                  TableColumn, StringFormatter, NumberFormatter,
-                                  StringEditor, IntEditor, NumberEditor,
                                   Panel, Tabs, Slider, Dialog)
 from bokeh.plotting import figure
 import utils

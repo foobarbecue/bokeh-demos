@@ -3,39 +3,6 @@ import numpy as np
 import world_countries as wc
 
 SUMMARY_KEYS = ['name', 'city', 'country', 'iata', 'icao', 'tz_db', 'alt']
-#
-# airport_keys = ['id', 'name', 'city', 'country', 'iata', 'icao', 'lat',
-#                 'lng', 'alt', 'dst', 'tz', 'tz_db']
-# route_keys = ['airline', 'id', 'source_ap', 'source_ap_id',
-#               'dest_ap', 'dest_ap_id', 'codeshare', 'stops', 'equip']
-# airline_keys = ['id', 'name', 'alias', 'iata', 'icao', 'callsign',
-#                 'country', 'active']
-#
-# airports = pd.read_csv('data/airports.dat', names=airport_keys)
-# routes = pd.read_csv('data/routes.dat', names=route_keys)
-#
-# # add the columns we need for visualization to the airports df
-# airports['color'] = ['green' for x in airports.id]
-# airports['alpha'] = [1. for x in airports.id]
-# airports['radius'] = [0.3 for x in airports.id]
-# airports['lname'] = [x.lower() for x in airports.name]
-# airports['lcity'] = [x.lower() for x in airports.city]
-# airports['liata'] = [str(x).lower() for x in airports.iata]
-#
-# sources = set([int(sid)for sid in routes.source_ap_id if sid.isdigit()])
-# dests = set([int(sid)for sid in routes.dest_ap_id if sid.isdigit()])
-# active_ap_ids = sources.union(dests)
-# active_airports = airports[airports.id.isin(map(int, active_ap_ids))]
-# ghost_airports = airports[~airports.id.isin(active_ap_ids)]
-#
-# out_routes = routes.groupby('source_ap_id').count().sort('id', ascending=False)
-# in_routes = routes.groupby('dest_ap_id').count().sort('id', ascending=False)
-#
-#
-# population = pd.read_csv('data/global-city-population-estimates.csv', delimiter=';', encoding = "utf8")[:400]
-# population['population'] = population['2015']
-# # population['color'] = ['green' for x in airports.id]
-# # population['alpha'] = [1. for x in airports.id]
 
 
 def pop_radius_mapper(pop):
@@ -55,15 +22,6 @@ def pop_radius_mapper(pop):
         return 0.4
     else:
         return 0.2
-
-# population['radius'] = [2*pop_radius_mapper(x) for x in population['2015']]
-#
-# cities = airports.city.values
-#
-# population['color'] = ['#cbdb29' if city in cities else 'red' for city in population['city']]
-#
-#
-# # cities = airports.groupby('city')
 
 
 def compute_cities_routes_density(population, cities, airports, out_routes, in_routes):
@@ -93,20 +51,6 @@ def compute_cities_routes_density(population, cities, airports, out_routes, in_r
     print ("MISSING CITIES", not_found)
     return cities_ap_density
 
-
-#
-# population['routes'] = compute_cities_routes_density(population, cities = airports.groupby('city'))
-#
-# population['pop_routes_ratio'] = [max(0, pop/float(city_routes)) for (pop,  city_routes) in
-#                        zip(population['population'], population['routes'])]
-# population['pop_routes_ratio'] = population['pop_routes_ratio'].replace([np.inf, -np.inf], np.nan)
-# max_ratio = max(population['pop_routes_ratio'])
-# population['alpha'] = [min((x/max_ratio)+0.1, 1) for x in population['pop_routes_ratio']]
-#
-#
-# columns = ['lon', 'lat', 'radius', 'alpha', 'routes', 'pop_routes_ratio']
-# popdata = {k: [float(x) for x in population[k]] for k in columns}
-# popdata.update({k: [x for x in population[k]] for k in ['population', 'city', 'country', 'color']})
 
 def get_worldmap(airports, routes):
     grpr = routes.groupby('source_ap_id').count().sort('id', ascending=False)
@@ -188,15 +132,7 @@ def radius_mapper(airport, destinations, active_ap_ids, out_routes):
             return 0.2
         else:
             return 0.1
-        # if id in airport['airport'].id.values:
-        #     return 0.6
-        # elif id in destinations:
-        #     return 0.5
-        # elif id in active_ap_ids:
-        #     return 0.2
-        # else:
-        #     return 0.1
-
+        
     return _
 
 
