@@ -2,6 +2,21 @@ name: airports
 title: Airports Demo
 
 
+datasets:
+  airports: !io
+    read_csv: 'data/airports.dat'
+    names: ['id', 'name', 'city', 'country', 'iata', 'icao', 'lat', 'lng', 'alt', 'dst', 'tz', 'tz_db']
+
+  routes: !io
+    read_csv: 'data/routes.dat'
+    names: ['airline', 'id', 'source_ap', 'source_ap_id', 'dest_ap', 'dest_ap_id', 'codeshare', 'stops', 'equip']
+
+  population: !io
+    read_csv: 'data/global-city-population-estimates.csv'
+    delimiter: ';'
+    encoding: utf8
+    limit: 400
+
 ui:
   net_map: !figure
     figure:
@@ -14,7 +29,7 @@ ui:
     figure:
         width: 1100
         height: 580
-        tools: pan,box_zoom,tap,hover,resize,reset
+        tools: pan,box_zoom,tap,hover,wheel_zoom,resize,reset
 
   searchbox: !TextInput
     name: searchbox
@@ -70,9 +85,9 @@ ui:
     label: search
     name: search_button
 
-  cancel_search: !Button
-    label: cancel
-    name: cancel_search
+#  cancel_search: !Button
+#    label: cancel
+#    name: cancel_search
 
   select_city_size: !CheckboxGroup
     labels: ['1', '1-10', '10-50', '50-100', '100-200', '200-300', '>300']
@@ -89,7 +104,7 @@ ui:
 layout:
   top: !AppHBox
     name: top
-    children: ['app_title', 'btn_selected_airport', 'top_space_mid', 'searchbox', 'search_space_mid', 'search_button', 'cancel_search']
+    children: ['app_title', 'btn_selected_airport', 'top_space_mid', 'searchbox', 'search_space_mid', 'search_button']
     height: 30
 
   sidebar: !AppVBox
@@ -130,6 +145,47 @@ layout:
   app: !AppVBox
     name: app
     children: ['dlg_airports_found', 'dlg_info', top, tabs]
+
+
+event_handlers:
+  module: app_event_handlers
+
+  update_selection: !Event
+    tags: main_source
+    property: selected
+    handler: update_selection
+
+  update_legend_selection: !Event
+    tags: legend_source
+    property: selected
+    handler: update_legend_selection
+
+  on_search: !Event
+    name: search_button
+    property: clicks
+    handler: on_search
+
+  on_selected_airport: !Event
+    name: btn_selected_airport
+    property: clicks
+    handler: on_selected_airport
+
+#  on_cancel: !Event
+#    name: cancel_search
+#    property: clicks
+#    handler: on_cancel
+
+  airport_row_selected: !Event
+    tags: airports_found_source
+    property: selected
+    handler: airport_row_selected
+
+  on_confirm_airport_selection: !Event
+    name: btn_airport_selected
+    property: clicks
+    handler: on_confirm_airport_selection
+
+
 
 
 #

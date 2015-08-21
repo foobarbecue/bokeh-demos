@@ -16,7 +16,7 @@ from bokeh.plotting import figure, show
 import math
 import plot_style_specs as pss
 
-from bokeh.simpleapp import simpleapp
+
 
 def get_theme(theme):
     rules = {
@@ -70,12 +70,8 @@ def get_theme(theme):
 
     return rules
 
-def create_airport_map(plot, ap_routes, isolated_aps, theme='default'):
-    import utils
-
+def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='default'):
     rules = get_theme(theme)
-    worldmap = utils.get_worldmap()
-    worldmap_src = ColumnDataSource(worldmap)
 
     # Using PLOTTING interface
     countries = Patches(xs='lons', ys='lats', fill_color=rules['map_color'],
@@ -172,12 +168,9 @@ def create_airport_map(plot, ap_routes, isolated_aps, theme='default'):
 
 
 
-def create_population_map(plot, ap_routes, isolated_aps, population_source, theme='default'):
-    import utils
+def create_population_map(plot, population_source, worldmap_src, theme='default'):
 
     rules = get_theme(theme)
-    worldmap_src = ColumnDataSource(utils.get_worldmap())
-
     # Using PLOTTING interface
     countries = Patches(xs='lons', ys='lats', fill_color=rules['map_color'],
                         fill_alpha=1, line_color=rules['map_line_color'],
@@ -193,7 +186,7 @@ def create_population_map(plot, ap_routes, isolated_aps, population_source, them
                     line_alpha='alpha',
                     radius='radius'
     )
-    isol_aps_renderer = plot.add_glyph(population_source, circle, selection_glyph=circle,
+    isol_aps_renderer = plot.add_glyph(population_source, circle, selection_glyph=None,
                                        nonselection_glyph=circle)
     #
     #
@@ -262,8 +255,6 @@ def create_population_map(plot, ap_routes, isolated_aps, population_source, them
 
 
 def create_starburst(ap_routes, isolated_aps, theme='default'):
-    import utils
-
     rules = get_theme(theme)
     connections_color = rules.pop('connections_color')
 
@@ -405,7 +396,7 @@ def create_size_legend(source, theme):#, value_string, color_string, bar_color):
         y_range=ydr,
         title="",
         plot_width=120,
-        plot_height=180,
+        plot_height=210,
         min_border=0,
         **pss.PLOT_FORMATS
     )
@@ -414,9 +405,9 @@ def create_size_legend(source, theme):#, value_string, color_string, bar_color):
     FONT_PROPS_XSM = dict(pss.FONT_PROPS_XSM)
     FONT_PROPS_XSM['text_color']='#000000'
 
-    legend = Text(x=5, y=100, text=['''City population:'''], x_offset = 15, **pss.FONT_PROPS_SM)
+    legend = Text(x=5, y=110, text=['''City population:'''], x_offset = 15, **pss.FONT_PROPS_SM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    smlegend = Text(x=5, y=90, text=['''in milions'''], x_offset = 65, **pss.FONT_PROPS_XSM)
+    smlegend = Text(x=5, y=98, text=['''in milions'''], x_offset = 65, **pss.FONT_PROPS_XSM)
     plot.add_glyph(source, smlegend, selection_glyph=smlegend)
 
     country = Text(x='x', y='y', text='name', x_offset = 25,  y_offset=5, **FONT_PROPS_XSM)
@@ -437,7 +428,7 @@ def create_size_legend(source, theme):#, value_string, color_string, bar_color):
                                        nonselection_glyph=circle)
 
 
-    tap = TapTool(plot=plot)#, renderers=[rect_renderer])
+    tap = TapTool(plot=plot, renderers=[isol_aps_renderer])
     # hover = HoverTool(plot=plot, renderers=[rect_renderer], tooltips=tooltips)
     plot.tools.extend([tap])
 
@@ -563,260 +554,3 @@ def create_route_freq_legend(source, theme):
     return plot
 
 
-import yaml
-from yaml import SafeLoader, Loader, BaseLoader
-
-def cds_constructor(loader, node):
-    """
-    Use pandas IO tools to easily load local and remote data files
-    """
-    bits = loader.construct_mapping(node, deep=True)
-    # Pandas io read method as the key
-    read_method = [key for key in bits.keys()][0]
-
-    # Read value can be a file or url
-    read_value = [value for value in bits.values()][0]
-
-    #return a dataframe
-    return getattr( pd, read_method)(read_value)
-
-def figure_constructor(loader, node):
-    """
-    A YAML constructor for the bokeh.plotting module
-    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
-    """
-    figure_data = loader.construct_mapping(node, deep=True)
-
-    # Create the figure, using the ``figure`` key
-    p = figure(
-        **figure_data['figure']
-    )
-
-    # Add glyphs to the figure using the ``glyphs`` key
-    glyphs = figure_data.get('glyphs', [])
-
-    for glyph in glyphs:
-        tmp = list(glyph.values())[0]
-        if 'source' in tmp:
-            # Convert source to column data source
-            tmp['source'] = ColumnDataSource(
-                tmp['source']
-            )
-        getattr(p, list(glyph.keys())[0])(**tmp)
-
-    return p
-
-def widget_factory(widget_class):
-    def _(loader, node):
-        data = loader.construct_mapping(node, deep=True)
-        return widget_classt(**data)
-    return _
-
-
-class UILoader(SafeLoader):
-    def __init__(self, *args, **kws):
-        self._objects = {}
-        super(UILoader, self).__init__(*args, **kws)
-
-    @classmethod
-    def add_widget_constructor(cls, widget_class):
-        tag = "!%s" % widget_class.__name__
-
-        def constructor(loader, node):
-            data = loader.construct_mapping(node, deep=True)
-            for k, v in data.items():
-                if isinstance(v, basestring) and \
-                        (v.startswith('{{') and v.endswith('}}')):
-                    stripped = v[2:-2].strip().split(" ")
-                    if len(stripped) >= 2:
-                        box, items = stripped[0], stripped[1:]
-                        if box.lower() == 'hbox':
-                            box = HBox
-                        elif box.lower() == 'vbox':
-                            box = VBox
-                        else:
-                            raise ValueError("Impossible to parse value: %s" % v)
-
-                        loaded_widgets = [loader._objects.get(item, item) for item in items]
-                        clean = box(*loaded_widgets)
-                    else:
-                        clean = stripped[0]
-
-                    data[k] = clean
-
-            widget = widget_class(**data)
-            loader._objects[data['name']] = widget
-
-            return widget
-
-        cls.add_constructor(tag, constructor)
-
-
-def app_object_constructor(loader, node):
-    """
-    A YAML constructor for the bokeh.plotting module
-    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
-    """
-    data = loader.construct_mapping(node, deep=True)
-    loaded_widget = loader._objects[data['name']]
-
-    child = data.get('child', None)
-    if child is not None:
-        loaded_widget._child = child
-
-    tabs = data.get('tabs', None)
-    if tabs is not None:
-        loaded_widget._tabs = tabs
-
-    content = data.get('content', None)
-    if content is not None:
-        loaded_widget._content = content
-
-    return loaded_widget
-
-UILoader.add_constructor("!app_object", app_object_constructor)
-UILoader.add_constructor("!figure", figure_constructor)
-
-widgets = [TextInput, PreText, Dialog, Panel, Tabs, Paragraph, AppVBox, AppHBox,
-           Button, CheckboxGroup]
-
-for klass in widgets:
-    UILoader.add_widget_constructor(klass)
-
-
-def load_from_yaml(yaml_path):
-    with open (yaml_path, 'r') as source:
-        text = source.read()
-
-    data = yaml.load (text, Loader=UILoader)
-    if 'widgets' not in data:
-        data['widgets'] = {}
-
-    return data
-
-def add_app_box(yaml_box, app, yaml_layout):
-    yaml_box.app = app
-
-    for i, v in enumerate(yaml_box.children):
-        if isinstance(v, basestring) and not v in app.objects:
-            yaml_box.children[i] = yaml_layout[v]
-
-
-def get_obj(name, app, layout, return_object=False):
-    if isinstance(name, basestring) and not name in app.objects:
-        if name.startswith('{{') and name.endswith('}}'):
-            stripped = name[2:-2].strip().split(" ")
-            if len(stripped) >= 2:
-                box, items = stripped[0], stripped[1:]
-                if box.lower() == 'hbox':
-                    box = HBox
-                elif box.lower() == 'vbox':
-                    box = VBox
-                else:
-                    raise ValueError("Impossible to parse value: %s" % v)
-
-                loaded_widgets = [get_obj(item, app, layout, True) for item in items]
-                return box(*loaded_widgets)
-            else:
-                raise ValueError("Invalid value %s" % name)
-        else:
-            return layout[name]
-
-    if return_object and isinstance(name, basestring):
-        return app.objects[name]
-
-    return name
-
-
-def create_app(name, route, yaml_path, constructor=None):
-    yapp = load_from_yaml(yaml_path)
-
-
-    @simpleapp(**yapp['widgets'].values())
-    def app(search_button):
-        objects = dict(yapp['ui'])
-
-        if callable(constructor):
-            return construct(objects)
-
-    @app.layout
-    def create_layout(app):
-        layout = yapp['layout']
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, (AppHBox, AppVBox)):
-                ui.add_app_box(v, app, layout)
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Panel):
-                v.child = ui.get_obj(v.child, app, layout)
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Tabs):
-                v.tabs = [ui.get_obj(x, app, layout, True) for x in v.tabs]
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Dialog):
-                v.content = ui.get_obj(v.content, app, layout)
-
-        add_app_box(layout['app'], app, layout)
-
-        return layout['app']
-
-    app.route(route)
-
-class YamlApp(object):
-    def __init__(self, yaml_path, route=None):
-        self.yaml_path = yaml_path
-        self.yapp = load_from_yaml(yaml_path)
-
-
-        @simpleapp(*self.yapp['widgets'].values())
-        def napp(*args):
-            objects = dict(self.yapp['ui'])
-
-            return self.app_objects(objects, *args)
-
-
-        @napp.layout
-        def create_layout(app):
-            return self.create_layout(app)
-
-        # TODO: We should validate and raise an error if no route is specified
-        napp.route(route or self.yapp.get('route', '/'))
-        self.app = napp
-
-        self.add_events()
-
-    @property
-    def name(self):
-        return self.app.name
-
-
-    @property
-    def widgets(self):
-        return self.app.widgets
-
-    def app_objects(self, objects):
-        return objects
-
-    def create_layout(self, app):
-        layout = self.yapp['layout']
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, (AppHBox, AppVBox)):
-                add_app_box(v, app, layout)
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Panel):
-                v.child = get_obj(v.child, app, layout)
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Tabs):
-                v.tabs = [get_obj(x, app, layout, True) for x in v.tabs]
-
-        for k, v in layout.items():
-            if k != 'app' and isinstance(v, Dialog):
-                v.content = get_obj(v.content, app, layout)
-
-        add_app_box(layout['app'], app, layout)
-
-        return layout['app']
