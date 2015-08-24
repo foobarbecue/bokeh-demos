@@ -12,14 +12,15 @@ from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText, DataTable,
                                   Panel, Tabs, Slider, Dialog)
 from bokeh.models.sources import ColumnDataSource
 from bokeh.plotting import figure, show
-from bokeh.simpleapp import simpleapp
+from bokeh.simpleapp import simpleapp, SimpleApp
 
 
-def cds_constructor(loader, node):
+def io_constructor(loader, node):
     """
     Use pandas IO tools to easily load local and remote data files
     """
     bits = loader.construct_mapping(node, deep=True)
+
     # Pandas io read method as the key
     read_method = [key for key in bits.keys()][0]
 
@@ -29,12 +30,50 @@ def cds_constructor(loader, node):
     limit = bits.pop('limit', None)
 
     ds = getattr(pd, read_method)(read_value, **bits)
-    print (read_value, limit)
+
     if limit is not None:
         ds = ds[:int(limit)]
-        print ("LIMITED!", len(ds))
 
     return ds
+
+def app_object_constructor(loader, node):
+    """
+    A YAML constructor for the bokeh.plotting module
+    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
+    """
+    data = loader.construct_mapping(node, deep=True)
+    loaded_widget = loader._objects[data['name']]
+
+    child = data.get('child', None)
+    if child is not None:
+        loaded_widget._child = child
+
+    tabs = data.get('tabs', None)
+    if tabs is not None:
+        loaded_widget._tabs = tabs
+
+    content = data.get('content', None)
+    if content is not None:
+        loaded_widget._content = content
+
+    return loaded_widget
+
+
+def app_event_handler(loader, node):
+    """
+    A YAML constructor for the bokeh.plotting module
+    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
+    """
+    data = loader.construct_mapping(node, deep=True)
+    return data
+
+def cds_constructor(loader, node):
+    data = loader.construct_mapping(node, deep=True)
+
+    cds_data = data.pop('data', {})
+    source = ColumnDataSource(data=cds_data, **data)
+
+    return source
 
 def figure_constructor(loader, node):
     """
@@ -47,16 +86,14 @@ def figure_constructor(loader, node):
     p = figure(**figure_data['figure'])
 
     # Add glyphs to the figure using the ``glyphs`` key
-    glyphs = figure_data.get('glyphs', [])
+    glyphs = figure_data.pop('glyphs', [])
 
-    for glyph in glyphs:
-        tmp = list(glyph.values())[0]
-        if 'source' in tmp:
-            # Convert source to column data source
-            tmp['source'] = ColumnDataSource(
-                tmp['source']
-            )
-        getattr(p, list(glyph.keys())[0])(**tmp)
+    # TODO: This is definitely an ugly hack. Need better engineered way
+    #       way of saving glyphs declaration for lazy loading sources
+    #       and holding the glyphs creation until all app sources have
+    #       been created
+
+    p._glyphs = glyphs
 
     return p
 
@@ -99,6 +136,7 @@ class UILoader(SafeLoader):
                     data[k] = clean
 
             widget = widget_class(**data)
+            # import pdb; pdb.set_trace()
             loader._objects[data['name']] = widget
 
             return widget
@@ -106,44 +144,14 @@ class UILoader(SafeLoader):
         cls.add_constructor(tag, constructor)
 
 
-def app_object_constructor(loader, node):
-    """
-    A YAML constructor for the bokeh.plotting module
-    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
-    """
-    data = loader.construct_mapping(node, deep=True)
-    loaded_widget = loader._objects[data['name']]
-
-    child = data.get('child', None)
-    if child is not None:
-        loaded_widget._child = child
-
-    tabs = data.get('tabs', None)
-    if tabs is not None:
-        loaded_widget._tabs = tabs
-
-    content = data.get('content', None)
-    if content is not None:
-        loaded_widget._content = content
-
-    return loaded_widget
-
-
-def app_event_handler(loader, node):
-    """
-    A YAML constructor for the bokeh.plotting module
-    http://bokeh.pydata.org/en/latest/docs/reference/plotting.html
-    """
-    data = loader.construct_mapping(node, deep=True)
-    return data
-
 UILoader.add_constructor("!app_object", app_object_constructor)
 UILoader.add_constructor("!figure", figure_constructor)
 UILoader.add_constructor("!Event", app_event_handler)
-UILoader.add_constructor("!io", cds_constructor)
+UILoader.add_constructor("!io", io_constructor)
+UILoader.add_constructor("!ColumnDataSource", cds_constructor)
 
 widgets = [TextInput, PreText, Dialog, Panel, Tabs, Paragraph, AppVBox, AppHBox,
-           Button, CheckboxGroup]
+           Button, CheckboxGroup, Slider]
 
 for klass in widgets:
     UILoader.add_widget_constructor(klass)
@@ -242,6 +250,8 @@ class YamlApp(object):
         self.post_process_datasets()
         self.create_sources()
 
+        self.init_objects()
+
         @simpleapp(*self.yapp['widgets'].values())
         def napp(*args):
             objects = dict(self.yapp['ui'])
@@ -255,11 +265,14 @@ class YamlApp(object):
 
         # TODO: We should validate and raise an error if no route is specified
         napp.route(route or self.yapp.get('route', '/'))
+
         self.app = napp
-
         self.init_app()
-
         self.add_events()
+
+
+        SimpleApp.datasets = self.datasets
+        SimpleApp.env = self.env
 
 
     def init_app(self):
@@ -277,7 +290,26 @@ class YamlApp(object):
 
     def create_sources(self):
         for dsname, ds in self.datasets.items():
-            self.sources[dsname] = ColumnDataSource(ds.to_dict(orient='list'), tags=[dsname])
+            if isinstance(ds, pd.DataFrame):
+                self.sources[dsname] = ColumnDataSource(ds.to_dict(orient='list'), tags=[dsname])
+            elif isinstance(ds, ColumnDataSource):
+                self.sources[dsname] = ds
+            else:
+                self.sources[dsname] = ColumnDataSource(ds)
+
+
+    def init_objects(self):
+        for obj in self.yapp['ui'].values():
+            if hasattr(obj, '_glyphs'):
+                glyphs = obj._glyphs
+                for glyph_name, glyph_values in glyphs.items():
+                    tmp = glyph_values
+                    if 'source' in tmp:
+
+                        # Convert source to column data source
+                        tmp['source'] = self.sources[tmp['source']]
+
+                    getattr(obj, glyph_name)(**tmp)
 
     @property
     def name(self):
@@ -315,7 +347,6 @@ class YamlApp(object):
             foo = load_foo(evt_handler['handler'])
             foo = self.app.update([({key:  object_name}, [evt_handler['property']])])(foo)
 
-            print("decorated", evt_handler[key])
 
     def app_objects(self, objects):
         return objects
@@ -341,3 +372,24 @@ class YamlApp(object):
         add_app_box(layout['app'], app, layout)
 
         return layout['app']
+
+
+def bokeh_app(yaml_file, route='/', handler=None):
+    app = YamlApp(yaml_file, route=route)
+
+    if callable(handler):
+
+
+        value_widgets = (TextInput, PreText, CheckboxGroup, Slider)
+        click_widgets = (Button)
+        for object_name, obj in app.yapp['ui'].items():
+            if isinstance(obj, value_widgets):
+                property = 'value'
+                handler = app.app.update([({'name':  object_name}, [property])])(handler)
+
+            if isinstance(obj, click_widgets):
+                property = 'clicks'
+                handler = app.app.update([({'name':  object_name}, [property])])(handler)
+
+
+    return app

@@ -26,7 +26,6 @@ def get_theme(theme):
         # 'background': 'white',
         'title_text_font': '"Times New Roman", Times, serif',
         'title_text_font_style': "normal",
-
     }
 
     if theme == "creme":
@@ -91,10 +90,6 @@ def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='defau
                     fill_alpha='alpha', line_alpha='alpha', radius='radius')
     isol_aps_renderer = plot.add_glyph(isolated_aps, circle, selection_glyph=circle,
                                        nonselection_glyph=circle)
-
-    # circle = Circle(x='lng', y="lat", fill_color='color', line_color='color',
-    #                 fill_alpha='alpha', line_alpha='alpha', radius='radius')
-    # aps_renderer = plot.add_glyph(source_aps, circle)
 
     hover = plot.select(dict(type=HoverTool))
     if hover:
@@ -200,38 +195,6 @@ def create_population_map(plot, population_source, worldmap_src, theme='default'
             ("Ratio", "@pop_routes_ratio")
         ])
         hover.renderers = [isol_aps_renderer]
-    #
-    # tap = plot.select(dict(type=TapTool))
-    # tap.renderers = [isol_aps_renderer]
-    #
-    # code = """
-    #     sel = cb_obj.get('selected')['1d'];
-    #     sel = sel.indices;
-    #
-    #     if (sel.length>0){
-    #         var data = cb_obj.get('data');
-    #         var url = "http://127.0.0.1:5050/data/update/"+data.id[parseInt(sel[0])];
-    #         xhr = $.ajax({
-    #             type: 'GET',
-    #             url: url,
-    #             contentType: "application/json",
-    #             header: {
-    #               client: "javascript"
-    #             }
-    #         });
-    #
-    #         xhr.done(function(details) {
-    #             if (details.connections == 0){
-    #                 alert("Sorry, the selected airport have no connections!");
-    #             }
-    #         });
-    #
-    #     }
-    #
-    # """
-    # objs = {}
-    # tap.action = Callback(code=code, args=objs)
-
 
     plot.axis.minor_tick_in=None
     plot.axis.minor_tick_out=None
@@ -552,5 +515,3 @@ def create_route_freq_legend(source, theme):
     plot.background_fill = '#2c2c2c'
 
     return plot
-
-

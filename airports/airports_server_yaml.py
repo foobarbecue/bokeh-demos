@@ -13,40 +13,6 @@ import ui
 import utils
 
 selected_aiport_id = '3682'
-# airport = utils.get_airport_data(selected_aiport_id, utils.airports)
-# ap_routes = utils.get_routes(airport)
-# ap_routes_source = ColumnDataSource(ap_routes, tags=['routes_source'])
-# all_airports = ColumnDataSource(utils.create_output(utils.airports), tags=['main_source'])
-# airports_found_source = ColumnDataSource(tags=['airports_found_source'])
-
-
-legend_source = ColumnDataSource(
-    {'name': ['>30000', '30000-25000', '25000-20000', '20000-15000', '15000-10000', '10000-5000', '5000-1000', '<=1000'],
-            'x': [35] * 8,
-            'y': [12, 24] + [35 + i*10 for i in range(6)], #[13, 27, 39, 49, 56, 64, 74, 80],
-            'radius': [10*x for x in [1.6, 1.4, 1.2, 1, 0.8, 0.6, 0.4, 0.2]]
-    },
-    tags=['legend_source']
-)
-
-apha_legend_source = ColumnDataSource(
-    {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
-            'x': [35] * 7,
-            'y': [x * 10 for x in range(1, 8)],
-            'alpha': [x * 0.1 for x in range(1, 8)],
-    },
-    tags=['alpha_legend_source']
-)
-
-route_freq_legend_source = ColumnDataSource(
-    {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
-        'x': [35] * 7,
-        'x_int': [55] * 7,
-        'y': [x * 10 for x in range(1, 8)],
-        'alpha': [x * 0.1 for x in range(1, 8)],
-    },
-    tags=['route_freq_legend_source']
-)
 
 class YAPP(appmaker.YamlApp):
     theme = 'dark'
@@ -59,7 +25,7 @@ class YAPP(appmaker.YamlApp):
         SimpleApp.theme = 'dark'
         SimpleApp.datasets = self.datasets
         SimpleApp.env = self.env
-        # SimpleApp.datasets = self.datasets
+
 
     def post_process_datasets(self):
         airports = self.datasets['airports']
@@ -100,12 +66,6 @@ class YAPP(appmaker.YamlApp):
         max_ratio = max(population['pop_routes_ratio'])
         population['alpha'] = [min((x/max_ratio)+0.1, 1) for x in population['pop_routes_ratio']]
 
-        # import pdb; pdb.set_trace()
-
-        # columns = ['lon', 'lat', 'radius', 'alpha', 'routes', 'pop_routes_ratio']
-        # popdata = {k: [float(x) for x in population[k]] for k in columns}
-        # popdata.update({k: [x for x in population[k]] for k in ['population', 'city', 'country', 'color']})
-
         self.env['airport'] = airport = utils.get_airport_data(selected_aiport_id, airports, routes,
                                          out_routes, active_ap_ids)
         ap_routes = utils.get_routes(airport)
@@ -118,23 +78,28 @@ class YAPP(appmaker.YamlApp):
         self.sources['worldmap_src'] = ColumnDataSource(utils.get_worldmap(airports, routes))
 
     def app_objects(self, objects):
-
-        # dest_sources = ColumnDataSource(utils.create_dests_source(airport, utils.airports))
         objects.update(
             {
                 'starburst': ui.create_starburst(self.sources['ap_routes_source'],
                                                  self.sources['dest_sources'],
                                                  theme=self.theme),
-                'legend': ui.create_size_legend(legend_source, self.theme),
-                'alpha_legend': ui.create_alpha_legend(apha_legend_source, self.theme),
-                'route_freq_legend': ui.create_route_freq_legend(route_freq_legend_source, self.theme),
+                'legend': ui.create_size_legend(
+                    # legend_source,
+                    self.sources['frequency_legend'],
+                    self.theme),
+                'alpha_legend': ui.create_alpha_legend(
+                    # apha_legend_source,
+                    self.sources['alpha_legend'],
+                    self.theme),
+                'route_freq_legend': ui.create_route_freq_legend(
+                    # route_freq_legend_source,
+                    self.sources['route_freq_legend'],
+                    self.theme),
             }
         )
         ui.create_airport_map(objects['net_map'], self.sources['ap_routes_source'],
                               self.sources['all_airports'], self.sources['worldmap_src'],
                               theme=self.theme)
-
-        # population_source = ColumnDataSource(utils.popdata, tags=['frequency_source'])
 
         ui.create_population_map(objects['freq_map'], self.sources['population'],
                                  self.sources['worldmap_src'], theme=self.theme)

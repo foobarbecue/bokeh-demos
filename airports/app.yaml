@@ -17,6 +17,15 @@ datasets:
     encoding: utf8
     limit: 400
 
+  route_freq_legend: !io
+    read_csv: 'data/route_freq_legend.csv'
+
+  frequency_legend: !io
+    read_csv: 'data/frequency_legend.csv'
+
+  alpha_legend: !io
+    read_csv: 'data/alpha_legend.csv'
+
 ui:
   net_map: !figure
     figure:
@@ -184,36 +193,3 @@ event_handlers:
     name: btn_airport_selected
     property: clicks
     handler: on_confirm_airport_selection
-
-
-
-
-#
-#ui:
-#  TextInput:
-#    name: searchbox
-#    title: search airport
-#
-#  PreText:
-#    name: info_txt
-#    width=200
-#    height=250
-#
-#  Dialog:
-#    name: dlg_info
-#    title: Selected Airport Info
-#    content=HBox(info_txt)
-#    visible=False
-#
-#  Panel:
-#    name: freq_tab
-#    title: Frequency
-#
-#  Panel:
-#    name: network_tab
-#    title: Networks
-#
-#  Tabs:
-#    name: main_tab
-##    tabs: [network_tab, freq_tab]
-#

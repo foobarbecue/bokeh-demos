@@ -132,7 +132,7 @@ def radius_mapper(airport, destinations, active_ap_ids, out_routes):
             return 0.2
         else:
             return 0.1
-        
+
     return _
 
 

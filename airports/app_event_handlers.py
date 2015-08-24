@@ -45,7 +45,7 @@ def update_selection(app):
     if source.selected['1d']['indices']:
         id_ = source.selected['1d']['indices'][0]
         airport_id = str(int(source.data['id'][id_]))
-        env['out_routes'] = utils.get_airport_data(
+        env['airport'] = utils.get_airport_data(
             airport_id, ds['airports'], ds['routes'], env['out_routes'], env['active_ap_ids']
         )
 
