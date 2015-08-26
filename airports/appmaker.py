@@ -86,7 +86,7 @@ def figure_constructor(loader, node):
     p = figure(**figure_data['figure'])
 
     # Add glyphs to the figure using the ``glyphs`` key
-    glyphs = figure_data.pop('glyphs', [])
+    glyphs = figure_data.pop('glyphs', {})
 
     # TODO: This is definitely an ugly hack. Need better engineered way
     #       way of saving glyphs declaration for lazy loading sources
