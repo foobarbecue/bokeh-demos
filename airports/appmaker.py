@@ -14,6 +14,7 @@ from bokeh.models.sources import ColumnDataSource
 from bokeh.plotting import figure, show
 from bokeh.simpleapp import simpleapp, SimpleApp
 
+pandas_methods = {'read_csv'}
 
 def io_constructor(loader, node):
     """
@@ -22,7 +23,7 @@ def io_constructor(loader, node):
     bits = loader.construct_mapping(node, deep=True)
 
     # Pandas io read method as the key
-    read_method = [key for key in bits.keys()][0]
+    read_method = [key for key in bits.keys() if key in pandas_methods][0]
 
     # Read value can be a file or url
     read_value = bits.pop(read_method)
@@ -30,7 +31,6 @@ def io_constructor(loader, node):
     limit = bits.pop('limit', None)
 
     ds = getattr(pd, read_method)(read_value, **bits)
-
     if limit is not None:
         ds = ds[:int(limit)]
 
