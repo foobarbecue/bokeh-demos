@@ -2,6 +2,7 @@ import importlib
 import yaml
 from yaml import SafeLoader, Loader, BaseLoader
 import pandas as pd
+from six import string_types
 
 from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText, DataTable,
                                   AppVBox, AppHBox, CheckboxGroup, Dialog,
@@ -116,7 +117,7 @@ class UILoader(SafeLoader):
         def constructor(loader, node):
             data = loader.construct_mapping(node, deep=True)
             for k, v in data.items():
-                if isinstance(v, basestring) and \
+                if isinstance(v, string_types) and \
                         (v.startswith('{{') and v.endswith('}}')):
                     stripped = v[2:-2].strip().split(" ")
                     if len(stripped) >= 2:
@@ -171,12 +172,12 @@ def add_app_box(yaml_box, app, yaml_layout):
     yaml_box.app = app
 
     for i, v in enumerate(yaml_box.children):
-        if isinstance(v, basestring) and not v in app.objects:
+        if isinstance(v, string_types) and not v in app.objects:
             yaml_box.children[i] = yaml_layout[v]
 
 
 def get_obj(name, app, layout, return_object=False):
-    if isinstance(name, basestring) and not name in app.objects:
+    if isinstance(name, string_types) and not name in app.objects:
         if name.startswith('{{') and name.endswith('}}'):
             stripped = name[2:-2].strip().split(" ")
             if len(stripped) >= 2:
@@ -195,7 +196,7 @@ def get_obj(name, app, layout, return_object=False):
         else:
             return layout[name]
 
-    if return_object and isinstance(name, basestring):
+    if return_object and isinstance(name, string_types):
         return app.objects[name]
 
     return name
