@@ -138,7 +138,7 @@ def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='defau
 
     """
     objs = {}
-    tap.callback = Callback(code=code, args=objs)
+    tap.action = Callback(code=code, args=objs)
 
 
     plot.axis.minor_tick_in=None
@@ -336,7 +336,7 @@ def create_dlg_airports_list(source):
 
         xhr.done(function(data) {
             console.log('done');
-        });
+        });call
         """
     )
     source.callback = callback

@@ -8,12 +8,28 @@ from utils import create_output
 
 
 # Prepare data
-airport = utils.get_airport_data('3682', utils.airports)
+airports = utils.airports = pd.read_csv(
+    'data/airports.dat',
+    names=['id', 'name', 'city', 'country', 'iata', 'icao', 'lat', 'lng', 'alt', 'dst', 'tz', 'tz_db']
+)
+routes = utils.routes = pd.read_csv(
+    'data/routes.dat',
+    names=['airline', 'id', 'source_ap', 'source_ap_id', 'dest_ap', 'dest_ap_id', 'codeshare', 'stops', 'equip']
+)
+
+sources = set([int(sid)for sid in routes.source_ap_id if sid.isdigit()])
+dests = set([int(sid)for sid in routes.dest_ap_id if sid.isdigit()])
+active_ap_ids = sources.union(dests)
+
+out_routes = routes.groupby('source_ap_id').count().sort('id', ascending=False)
+# (selected_aiport_id, airports, routes, out_routes, active_ap_ids)
+
+airport = utils.get_airport_data('3682', utils.airports,
+                                 routes, out_routes, active_ap_ids)
 ap_routes = utils.get_routes(airport)
 _source_aps = create_output(airport['destinations'])
 _all_aps = create_output(utils.airports)
 
-_active_aps = create_output(utils.active_airports)
 
 app = Flask(__name__)
 
@@ -41,7 +57,9 @@ def update(newid):
     global _isolated_aps
     global _all_aps
 
-    airport = utils.get_airport_data(str(newid), utils.airports)
+    # airport = utils.get_airport_data(str(newid), utils.airports)
+    utils.get_airport_data(str(newid), utils.airports,
+                                 routes, out_routes, active_ap_ids)
     ap_routes = utils.get_routes(airport)
 
     _all_aps = create_output(utils.airports)

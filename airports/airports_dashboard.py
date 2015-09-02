@@ -15,6 +15,7 @@ from bokeh.templates import RESOURCES
 
 from flask import render_template, request
 from flask_app import app
+import flask_app
 
 
 POLL_TIME = 1000
@@ -47,7 +48,11 @@ def newapplet():
     # create plot object and add all it's objects
     plot = figure(title="Flights", plot_width=800, plot_height=500,
                   tools="pan,box_zoom,box_select,tap,resize,reset")
-    ui.create_airport_map(plot, ap_routes_source, all_airports, theme=theme)
+
+    worldmap_src = ColumnDataSource(utils.get_worldmap(flask_app.airports, flask_app.routes))
+    ui.create_airport_map(plot, ap_routes_source, all_airports,
+                          worldmap_src,
+                          theme=theme)
 
     # get the js script and html divs for the bokeh objects to place on the
     # html page
