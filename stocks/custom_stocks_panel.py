@@ -11,8 +11,6 @@ from bokeh.models.actions import Callback
 
 import requests
 
-output_file("remotedata.html")
-
 THEME = "default"
 
 def style_axis(plot, theme):
@@ -262,6 +260,7 @@ gen_config = dict(
     debug=True,
 )
 if __name__ == "__main__":
+    output_file("remotedata.html")
     print("\nView this example at: %s\n" % gen_config['applet_url'])
     application.debug = gen_config['debug']
     application.run(host=gen_config['host'], port=gen_config['port'])

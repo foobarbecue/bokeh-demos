@@ -58,7 +58,7 @@ def update(newid):
     global _all_aps
 
     # airport = utils.get_airport_data(str(newid), utils.airports)
-    utils.get_airport_data(str(newid), utils.airports,
+    airport = utils.get_airport_data(str(newid), utils.airports,
                                  routes, out_routes, active_ap_ids)
     ap_routes = utils.get_routes(airport)
 
