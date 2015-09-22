@@ -121,8 +121,8 @@ scatter_ds = ColumnDataSource(data={
 TOOLS="pan,wheel_zoom,box_zoom,box_select,hover,crosshair,lasso_select,reset"
 
 # create the scatter plot
-p = figure(tools=TOOLS, plot_width=600, plot_height=600, title=None, min_border=10, min_border_left=50)
-p.scatter('routes', 'population', radius=15, color="color", alpha=0.7, name="scatter", source=scatter_ds)
+p = figure(tools=TOOLS, plot_width=500, plot_height=500, title=None, min_border=10, min_border_left=50)
+p.scatter('routes', 'population', radius=20, color="color", alpha=0.7, name="scatter", source=scatter_ds)
 
 renderer = p.select(dict(name="scatter"))
 
@@ -148,9 +148,9 @@ hmax = max(hhist)*1.1
 
 ph = figure(toolbar_location=None, plot_width=p.plot_width, plot_height=200, x_range=p.x_range,
             y_range=(hmax, 0), title=None, min_border=10, min_border_left=50)
-ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hhist, color="#9e9d9d", line_color="#4c4c4c")
-ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#9e9d9d", alpha=0.5, line_color=None, name="hhist")
-ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#9e9d9d", alpha=0.1, line_color=None, name="hhist2")
+ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hhist, color="#6b6b6b", line_color="#4c4c4c")
+ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.5, line_color=None, name="hhist")
+ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.1, line_color=None, name="hhist2")
 ph.xgrid.grid_line_color = None
 
 ph_source = ph.select(dict(name="hhist"))[0].data_source
@@ -167,9 +167,9 @@ th = 42
 
 pv = figure(toolbar_location=None, plot_width=200, plot_height=p.plot_height+th-10, x_range=(0, vmax),
             y_range=p.y_range, title=None, min_border=10, min_border_top=th)
-pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vhist, color="#9e9d9d", line_color="#4c4c4c")
-pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#9e9d9d", alpha=0.5, line_color=None, name="vhist")
-pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#9e9d9d", alpha=0.1, line_color=None, name="vhist2")
+pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vhist, color="#6b6b6b", line_color="#4c4c4c")
+pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#6b6b6b", alpha=0.5, line_color=None, name="vhist")
+pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#6b6b6b", alpha=0.1, line_color=None, name="vhist2")
 pv.ygrid.grid_line_color = None
 
 pv_source = pv.select(dict(name="vhist"))[0].data_source
@@ -178,7 +178,7 @@ pv_source2 = pv.select(dict(name="vhist2"))[0].data_source
 legend_source = ColumnDataSource(
     {
         'label': ['> 250', '100 - 250', '< 100'],
-        'y': [90, 65, 40],
+        'y': [90, 60, 30],
         'x': [35] * 3,
         'fill_color': ["#8e4d9e", "#2cbdb9", "#b9bf3d"]
     }
@@ -230,7 +230,7 @@ columns = [
     # TableColumn(field="routes",          title="routes",    editor=IntEditor()),\
     TableColumn(field="gdp",          title="gdp",    editor=NumberEditor(), formatter=NumberFormatter(format="0.0")),
 ]
-data_table = DataTable(source=scatter_ds, columns=columns, editable=True, width=300, height=p.plot_height+th-10+150)
+data_table = DataTable(source=scatter_ds, columns=columns, editable=True, width=300, height=p.plot_height+th-10+100)
 
 
 # set up callbacks
@@ -258,12 +258,28 @@ def on_selection_change(obj, attr, old, new):
 
 # scatter_ds.on_change('selected', on_selection_change)
 
-layout = hplot(
-    vplot(
-        hplot(p, pv),
-        hplot(ph, Paragraph(height=90), legend)), Paragraph(width=30),
-    vplot(Paragraph(height=30), data_table)
+layout = vplot(
+    hplot(Paragraph(text='Flight Data Dashboard', width=400, height=10, classes=['apptitle'])
+          , classes=['topbar']),
+     hplot(
+        vplot(
+            Paragraph(height=30),
+            Paragraph(text='Flight Data Overview', width=400, height=20, classes=['plottitle']),
+            hplot(p, pv),
+            hplot(ph, Paragraph(height=90), legend)), Paragraph(width=30),
+        Paragraph(width=10),
+        Paragraph(width=30, height=900, classes=['tablebox']),
+        vplot(Paragraph(height=30),
+              Paragraph(text='Table View', width=320, height=30, classes=['plottitle']),
+              Paragraph(height=30),
+              data_table,
+              Paragraph(height=80),
+              classes=['tablebox']),
+        Paragraph(width=150, height=900, classes=['tablebox']),
+    )
+
 )
+
 
 curdoc().clear()
 curdoc().add(layout)

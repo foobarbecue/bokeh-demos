@@ -94,9 +94,9 @@ def color_mapper(airport, destinations, active_ap_ids):
                 return '#29bdbc'
 
         elif id in active_ap_ids:
-            return "black"
+            return "#1f1f1f"
         else:
-            return "black"
+            return "#1f1f1f"
 
     return _
 
@@ -135,6 +135,18 @@ def radius_mapper(airport, destinations, active_ap_ids, out_routes):
 
     return _
 
+def radius_mapper_by_network(airport, destinations, active_ap_ids, *args, **kws):
+    def _(id, country=None):
+        if id in airport['airport'].id.values:
+            return 0.8
+        elif id in destinations:
+            return 0.8
+        elif id in active_ap_ids:
+            return 0.2
+        else:
+            return 0
+
+    return _
 
 def search_airports(txt, airports):
     return airports[airports.lname.str.contains(txt) |
@@ -146,8 +158,6 @@ def get_airport_data(airport_id, airports, routes, out_routes, active_ap_ids):
     main_ap = airports[airports.id == int(airport_id)]
     connections = routes[routes.source_ap_id == airport_id].sort('dest_ap_id')
     destinations_id = set([int(x) for x in connections.dest_ap_id.values if x.isdigit()])
-
-
     out_connections = routes[routes.dest_ap_id == airport_id].sort('source_ap_id')
     origins_id = set([int(x) for x in out_connections.source_ap_id.values if x.isdigit()])
 
@@ -174,7 +184,9 @@ def get_airport_data(airport_id, airports, routes, out_routes, active_ap_ids):
     make_radius = radius_mapper(airport, destinations_id, active_ap_ids, out_routes)
     airports['radius'] = [make_radius(xid) for xid in airports.id]
 
-    # import pdb; pdb.set_trace()
+    make_radius = radius_mapper_by_network(airport, destinations_id, active_ap_ids, out_routes)
+    airports['radius_by_network'] = [float(make_radius(xid)) for xid in airports.id]
+
     # update the airports destinations df as we've added color and alpha
     conns = set([int(x) for x in connections.dest_ap_id.values if x.isdigit()])
     airport['destinations'] = airports[airports.id.isin(conns)]
@@ -207,7 +219,7 @@ def create_output(df, extra_keys=None):
         'lat': [float(x) for x in df.lat],
     }
 
-    for key in ['id', 'alpha', 'radius']:
+    for key in ['id', 'alpha', 'radius', 'radius_by_network']:
         if key in df.columns:
             out[key] = [float(x) for x in df[key]]
 

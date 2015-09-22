@@ -22,52 +22,28 @@ def get_theme(theme):
     rules = {
         'map_color': "#2c2c2c",
         'map_line_color': "#565656",
-        # 'connections_color': "lightgrey",
         'background_fill': '#474746',
         'title_text_font': 'Verdana',
         'title_text_font_style': "normal",
     }
 
-    # if theme == "creme":
-    #     rules['map_color'] = "#8B8378"
-    #     rules['map_line_color'] = "#8B8378"
-    #     rules['connections_color'] = "black"
-    #
-    #     rules['background_fill'] = '#FEFFEF'
-    #     rules['border_fill'] = '#FEFFEF'
-    #     rules['title_text_font'] = '"Times New Roman", Times, serif'
-    #     rules['title_text_font_style'] = "italic"
-    #
-    #     rules['outline_line_width'] = 7
-    #     rules['outline_line_alpha'] = 0.3
-    #     rules['outline_line_color'] = "#8B8378"
-    #
-    # elif theme == "dark":
-    #     rules['map_color'] = "#2c2c2c"
-    #     rules['map_line_color'] = "#565656"
-    #     rules['connections_color'] = "white"
-    #
-    #     rules['background_fill'] = '#474746'
-    #     rules['border_fill'] = '#474746'
-    #     rules['min_border'] = 0
-    #     rules['title_text_font'] = '"Times New Roman", Times, serif'
-    #     rules['title_text_font_style'] = "italic"
-    #
-    #     rules['outline_line_width'] = 0
-    #     rules['outline_line_alpha'] = 0.3
-    #     rules['outline_line_color'] = None
-    #
-    #     rules['grid'] = {
-    #         'grid_line_color': None,
-    #     }
-    #
-    #     rules['axis'] = {
-    #         'major_label_text_font_size': None,
-    #         'major_label_text_color': None,
-    #         'axis_label_text_font_size': '0',
-    #     }
-
     return rules
+
+def style_map(plot):
+    plot.axis.minor_tick_in=None
+    plot.axis.minor_tick_out=None
+    plot.axis.major_tick_in=None
+    plot.axis.major_tick_line_color = None#"#8B8378"
+    plot.axis.major_label_text_color = "#8B8378"
+    plot.axis.axis_line_color = None
+
+    plot.axis.major_label_text_font_style = "italic"
+
+
+    plot.axis.major_label_text_font_size = None
+    plot.axis.major_label_text_color = None
+    plot.axis.axis_label_text_font_size = '0'
+    plot.background_fill = '#4c4c4c'
 
 def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='default'):
     rules = get_theme(theme)
@@ -83,13 +59,10 @@ def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='defau
                                        nonselection_glyph=countries)
 
     # Using PLOTTING interface
-    # connections_color = rules.pop('connections_color')
-    plot.multi_line('xs', 'ys', color='color', line_width=1,
-                    line_alpha=0.4, source=ap_routes)
-
-    # # Using GLYPH interface
+    plot.multi_line('xs', 'ys', color='color', line_width=1, line_alpha=0.4, source=ap_routes)
+    # Using GLYPH interface
     circle = Circle(x='lng', y="lat", fill_color='color', line_color='color',
-                    fill_alpha='alpha', line_alpha='alpha', radius='radius')
+                    fill_alpha='alpha', line_alpha='alpha', radius='radius_by_network')
     isol_aps_renderer = plot.add_glyph(isolated_aps, circle, selection_glyph=circle,
                                        nonselection_glyph=circle)
 
@@ -103,21 +76,6 @@ def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='defau
     tap = plot.select(dict(type=TapTool))
     tap.renderers = [isol_aps_renderer]
 
-    plot.axis.minor_tick_in=None
-    plot.axis.minor_tick_out=None
-    plot.axis.major_tick_in=None
-    plot.axis.major_tick_line_color = None#"#8B8378"
-    plot.axis.major_label_text_color = "#8B8378"
-    plot.axis.axis_line_color = None
-
-    plot.axis.major_label_text_font_style = "italic"
-
-
-    plot.axis.major_label_text_font_size = None
-    plot.axis.major_label_text_color = None
-    plot.axis.axis_label_text_font_size = '0'
-
-
     for k, v in rules.items():
         if k not in ['map_line_color', 'map_color', 'grid', 'axis']:
             setattr(plot, k, v)
@@ -127,6 +85,8 @@ def create_airport_map(plot, ap_routes, isolated_aps, worldmap_src, theme='defau
             if k not in ['map_line_color', 'map_color', 'grid', 'axis']:
                 plot_attr = getattr(plot, section)
                 setattr(plot_attr, k, v)
+
+    style_map(plot)
 
 
 
@@ -142,7 +102,6 @@ def create_population_map(plot, population_source, worldmap_src, theme='default'
                                        nonselection_glyph=countries)
 
     # Using GLYPH interface
-    # import pdb; pdb.set_trace()
     circle = Circle(x='lon', y="lat", fill_color='color', line_color='color',
                     fill_alpha='alpha',
                     line_alpha='alpha',
@@ -163,16 +122,6 @@ def create_population_map(plot, population_source, worldmap_src, theme='default'
         ])
         hover.renderers = [isol_aps_renderer]
 
-    plot.axis.minor_tick_in=None
-    plot.axis.minor_tick_out=None
-    plot.axis.major_tick_in=None
-    plot.axis.major_tick_line_color = None#"#8B8378"
-    plot.axis.major_label_text_color = "#8B8378"
-    plot.axis.axis_line_color = None
-
-    plot.axis.major_label_text_font_style = "italic"
-
-
     for k, v in rules.items():
         if k not in ['map_line_color', 'map_color', 'grid', 'axis']:
             setattr(plot, k, v)
@@ -183,6 +132,7 @@ def create_population_map(plot, population_source, worldmap_src, theme='default'
                 plot_attr = getattr(plot, section)
                 setattr(plot_attr, k, v)
 
+    style_map(plot)
 
 def create_starburst(ap_routes, isolated_aps, theme='default'):
     rules = get_theme(theme)
@@ -302,12 +252,12 @@ def create_size_legend(source, theme):#, value_string, color_string, bar_color):
     FONT_PROPS_XXSM = dict(pss.FONT_PROPS_XXSM)
     FONT_PROPS_XXSM['text_font_style']='normal'
 
-    legend = Text(x=5, y=110, text=['''City population:'''], x_offset = 15, **FONT_PROPS_XSM)
+    legend = Text(x=5, y=110, text=['''City population:'''], x_offset = 10, **FONT_PROPS_XSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    smlegend = Text(x=5, y=98, text=['''in milions'''], x_offset = 45, **FONT_PROPS_XXSM)
+    smlegend = Text(x=5, y=100, text=['''in milions'''], x_offset = 10, **FONT_PROPS_XXSM)
     plot.add_glyph(source, smlegend, selection_glyph=smlegend)
 
-    country = Text(x='x', y='y', text='name', x_offset = 25,  y_offset=5, **pss.FONT_PROPS_XSM)
+    country = Text(x='x', y='y', text='name', x_offset = 20,  y_offset=5, **pss.FONT_PROPS_XSM)
     plot.add_glyph(source, country, selection_glyph=country)
 
     rules = get_theme(theme)
@@ -360,14 +310,14 @@ def create_alpha_legend(source, theme):#, value_string, color_string, bar_color)
     FONT_PROPS_XXSM = dict(pss.FONT_PROPS_XXSM)
     FONT_PROPS_XXSM['text_font_style']='normal'
 
-    legend = Text(x=5, y=100, text=['''Flight frequency'''], x_offset = 15, **FONT_PROPS_XSM)
+    legend = Text(x=5, y=100, text=['''Flight frequency'''], x_offset = 10, **FONT_PROPS_XSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    legend = Text(x=5, y=90, text=['''by passenger:'''], x_offset = 15, **FONT_PROPS_XSM)
+    legend = Text(x=5, y=90, text=['''by passenger:'''], x_offset = 10, **FONT_PROPS_XSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    smlegend = Text(x=5, y=80, text=['''in milions'''], x_offset = 65, **FONT_PROPS_XXSM)
+    smlegend = Text(x=5, y=80, text=['''in milions'''], x_offset = 10, **FONT_PROPS_XXSM)
     plot.add_glyph(source, smlegend, selection_glyph=smlegend)
 
-    country = Text(x='x', y='y', text='name', x_offset = 25,  y_offset=5, **pss.FONT_PROPS_XSM)
+    country = Text(x='x', y='y', text='name', x_offset = 25,  y_offset=5, **pss.FONT_PROPS_XXSM)
     plot.add_glyph(source, country, selection_glyph=country)
 
     rules = get_theme(theme)
@@ -420,11 +370,11 @@ def create_route_freq_legend(source, theme):
     # FONT_PROPS_XXSM['text_font_size']='8pt'
 
 
-    legend = Text(x=5, y=100, text=['''Flight frequency'''], x_offset = 15, **FONT_PROPS_XSM)
+    legend = Text(x=5, y=100, text=['''Flight frequency'''], x_offset = 10, **FONT_PROPS_XSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    legend = Text(x=5, y=90, text=['''by passenger:'''], x_offset = 15, **FONT_PROPS_XSM)
+    legend = Text(x=5, y=90, text=['''by passenger:'''], x_offset = 10, **FONT_PROPS_XSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    smlegend = Text(x=5, y=80, text=['''in milions'''], x_offset = 65, **FONT_PROPS_XXSM)
+    smlegend = Text(x=5, y=80, text=['''in milions'''], x_offset = 10, **FONT_PROPS_XXSM)
     plot.add_glyph(source, smlegend, selection_glyph=smlegend)
 
     country = Text(x='x', y='y', text='name', x_offset = 35,  y_offset=5, **pss.FONT_PROPS_XSM)
@@ -484,22 +434,11 @@ def create_int_ext_route_legend(theme):
         'x_int': [20, 20],
         'y': [20, 40],
         'color': ['#29bdbc', '#c28cbd'],
-        'label': ['national network', 'international network']
+        'label': ["Nat'l networks", "Int'l networks"]
     })
 
     legend = Text(x='x', y='y', text='label', x_offset = 25, y_offset=5, **pss.FONT_PROPS_XXSM)
     plot.add_glyph(source, legend, selection_glyph=legend)
-    # legend = Text(x=5, y=90, text=['''internation network'''], x_offset = 25, **pss.FONT_PROPS_XSM)
-    # plot.add_glyph(source, legend, selection_glyph=legend)
-    # smlegend = Text(x=5, y=80, text=['''in milions'''], x_offset = 65, **pss.FONT_PROPS_XSM)
-    # plot.add_glyph(source, smlegend, selection_glyph=smlegend)
-    #
-    # country = Text(x='x', y='y', text='name', x_offset = 35,  y_offset=5, **pss.FONT_PROPS_XSM)
-    # plot.add_glyph(source, country, selection_glyph=country)
-
-    rules = get_theme(theme)
-
-
 
     circle = Rect(x='x_int', y="y", width=20, height=5,
                   # fill_color='#722F37', line_color='#722F37',

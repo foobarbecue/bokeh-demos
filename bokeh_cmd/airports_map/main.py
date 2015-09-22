@@ -13,7 +13,7 @@ from bokeh.io import output_file
 from bokeh.models.sources import ColumnDataSource, AjaxDataSource
 from bokeh.models.widgets import (HBox, VBox, VBoxForm, PreText, CheckboxGroup,
                                   Select, AppHBox, AppVBox, AppVBoxForm,
-                                    Paragraph, Dialog,
+                                    Paragraph, Dialog, Tabs, Panel,
                                   AutocompleteInput, Button, TextInput)
 
 
@@ -35,8 +35,9 @@ from bokeh.appmaker import bokeh_app, curdoc, SimpleApp
 # TODO: WE CAN AVOID THISS!!!!
 from flask import jsonify
 
-POLL_TIME = 1000
+from datasources import *
 
+POLL_TIME = 1000
 selected_airport_id = '3682'
 # airport = utils.get_airport_data(selected_aiport_id, utils.airports)
 # ap_routes = utils.get_routes(airport)
@@ -64,7 +65,6 @@ dests = set([int(sid)for sid in routes.dest_ap_id if sid.isdigit()])
 active_ap_ids = sources.union(dests)
 
 out_routes = routes.groupby('source_ap_id').count().sort('id', ascending=False)
-# (selected_aiport_id, airports, routes, out_routes, active_ap_ids)
 
 airport = utils.get_airport_data(selected_airport_id, utils.airports,
                                  routes, out_routes, active_ap_ids)
@@ -79,6 +79,8 @@ airports_found_source = ColumnDataSource(tags=['airports_found_source'])
 worldmap_source = ColumnDataSource(utils.get_worldmap(airports, routes))
 worldmap_source.data['alpha'] = [1 for x in worldmap_source.data['alpha']]
 
+population_source = ColumnDataSource(ColumnDataSource.from_df(population))
+
 legend_source = ColumnDataSource(
     {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
             'x': [25] * 7,
@@ -88,7 +90,7 @@ legend_source = ColumnDataSource(
     tags=['legend_source']
 )
 freq_legend_source = ColumnDataSource(
-    {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '>=1'],
+    {'name': ['>300', '200-300', '100-200', '50-100', '10-50', '1-10', '<=1'],
             'x': [35] * 7,
             'x_int': [55] * 7,
             'y': [10*x for x in range(1, 8)],
@@ -99,8 +101,8 @@ freq_legend_source = ColumnDataSource(
 
 
 # Widgets
-btn_search = Button(label='search', name='search_button')
-btn_cancel_search = Button(label='cancel', name='cancel_search')
+btn_search = Button(label='search', name='search_button', classes=['topbutton'])
+btn_cancel_search = Button(label='cancel', name='cancel_search', classes=['topbutton'])
 
 select_city_size = CheckboxGroup(
         labels=['1', '1-10', '10-50', '50-100', '100-200', '200-300', '>300'],
@@ -116,16 +118,10 @@ label_city_filter = Paragraph(text='Filter city by number of routes:',
                               height=25)
 
 btn_selected_airport = Button(label=airport['airport'].name.values[0],
-                              name='btn_selected_airport')
+                              name='btn_selected_airport', classes=['topbutton'])
 
-@simpleapp(btn_search, btn_cancel_search, select_city_size, label_city_filter, btn_selected_airport,
-           cumulate_paths)
-def app(search_button):
-    # retrieve the theme to be used..
-    theme = 'dark' #request.args.get('theme', 'default')
 
-    searchbox = TextInput()#completions=[x for x in utils.airports.name.values])
-
+def create_airport_map(theme):
     # create plot object and add all it's objects
     plot = figure(title="Flights", plot_width=900, plot_height=600, toolbar_location='right',
                   tools="pan,box_zoom,box_select,tap,resize,reset")
@@ -133,56 +129,101 @@ def app(search_button):
     ui.create_airport_map(plot, ap_routes_source, all_airports,
                           worldmap_source, theme=theme)
 
+    route_freq_legend = ui.create_route_freq_legend(freq_legend_source, theme)
+    # legend = ui.create_size_legend(legend_source, theme)
+    int_ext_route_legend = ui.create_int_ext_route_legend(theme)
+
+    return {
+        'main_map': plot,
+        # 'legend': legend,
+        'route_freq_legend': route_freq_legend,
+        'int_ext_route_legend': int_ext_route_legend,
+    }
+
+def create_frequency_map(theme):
+    # create plot object and add all it's objects
+    plot = figure(title="Flights", plot_width=900, plot_height=600,
+                  toolbar_location='right',
+                  tools="pan,box_zoom,box_select,tap,resize,reset")
+
+    ui.create_population_map(plot, population_source, worldmap_source, theme=theme)
+
+    return {
+        'frequency_map': plot,
+        'pop_alpha_legend': ui.create_alpha_legend(freq_legend_source, theme),
+        'city_population_legend': ui.create_size_legend(legend_source, theme),
+    }
+
+
+@simpleapp(btn_search, btn_cancel_search, select_city_size, label_city_filter, btn_selected_airport,
+           cumulate_paths)
+def app(search_button):
+    # retrieve the theme to be used..
+    theme = 'dark' #request.args.get('theme', 'default')
+
+    searchbox = TextInput(classes=['appsearch'])#completions=[x for x in utils.airports.name.values])
+
+    # # create plot object and add all it's objects
+    # plot = figure(title="Flights", plot_width=900, plot_height=600, toolbar_location='right',
+    #               tools="pan,box_zoom,box_select,tap,resize,reset")
+    #
+    # ui.create_airport_map(plot, ap_routes_source, all_airports,
+    #                       worldmap_source, theme=theme)
+    # plot = create_airport_map(theme)
 
     info_txt = PreText(text=airport['summary'], width=200, height=250)
 
     dest_sources = ColumnDataSource(utils.create_dests_source(airport, utils.airports))
     starburst = ui.create_starburst(ap_routes_source, dest_sources, theme=theme)
-    dlg_info = Dialog(title='Selected Airport Info', #buttons=[confirm_chart_button],
-                        content=VBox(info_txt, starburst), visible=False)
+    dlg_info = Dialog(title='Selected Airport Info',
+                      content=VBox(info_txt, starburst),
+                      visible=False
+    )
 
 
-    route_freq_legend = ui.create_route_freq_legend(freq_legend_source, theme)
-    legend = ui.create_size_legend(legend_source, theme)
-    int_ext_route_legend = ui.create_int_ext_route_legend(theme)
     objects = {
-        'main_map': plot,
+        # 'main_map': plot,
         'info_txt': info_txt,
         'starburst': starburst,
         'searchbox': searchbox,
         'dlg_info': dlg_info,
-        'legend': legend,
-        'route_freq_legend': route_freq_legend,
-        'int_ext_route_legend': int_ext_route_legend,
     }
+
     objects.update(ui.create_dlg_airports_list(airports_found_source))
 
-    plot.background_fill = '#4c4c4c'
+    objects.update(create_frequency_map(theme))
+
+    objects.update(create_airport_map(theme))
 
     return objects
 
 @app.layout
 def stock2_layout(app):
     topbar = AppHBox(app=app, children=[
-        Paragraph(text='Worldwide Flight Networks', width=300, height=10),
+        Paragraph(text='Worldwide Flight Networks', width=400, height=10, classes=['apptitle']),
         'btn_selected_airport',
         Paragraph(width=200),
         'searchbox', 'search_button',
-        ])
+        ], classes=['topbar'])
     sidebar = AppVBox(app=app, children=[
-        Paragraph(height=60),
+        Paragraph(height=260),
         'int_ext_route_legend',
         Paragraph(height=10),
         'route_freq_legend',
          Paragraph(height=1),
-         'legend',
+         # 'legend',
     ])
     mainbox = AppHBox(app=app, children=[
         'dlg_airports_found', 'dlg_info',
         sidebar,
         'main_map']
     )
-    app = AppVBox(app=app, children=[topbar, mainbox])
+    popsidebar = AppVBox(app=app, children=[Paragraph(height=150), 'city_population_legend', 'pop_alpha_legend'])
+    population_box = AppHBox(app=app, children=[popsidebar, 'frequency_map']
+    )
+    tabs = Tabs(tabs=[Panel(title='Flight Frequency', child=population_box),
+                      Panel(title='Flight Networks', child=mainbox), ])
+    app = AppVBox(app=app, children=[topbar, tabs])
     return app
 
 @app.update([({'tags' : 'main_source'}, ['selected'])])
@@ -241,6 +282,7 @@ def on_search(searchbox, app):
     objects['dlg_airports_found'].visible = True
 
     return objects
+
 
 
 @app.update([({'name' : 'btn_selected_airport'}, ['clicks'])])
