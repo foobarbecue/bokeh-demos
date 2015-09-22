@@ -17,6 +17,8 @@ from threading import Thread
 import numpy as np
 import time
 
+import ui
+
 # global variables to maintain state. Not the best of solutions but it works for a demo.
 ds_prev = None          # table of previous positions
 ds_new = None           # table of new trades
@@ -45,21 +47,29 @@ def create(new_df, df):
     plot_rates = figure(
        y_range=[0.00, 0.03], title="Swap Rates",
        x_axis_label='Maturity (yr)', y_axis_label='Rate ( / yr )',
-       width=1000, height=500
+       width=1000, height=400
     )
-    plot_rates.line("Maturity","Live", source=ds_prev, color="#396285", legend="Live")
-    plot_rates.circle("Maturity","Live", source=ds_prev, fill_color="#396285", size=8, legend="Live")
-    plot_rates.line("Maturity","Close", source=ds_prev, color="#CE603D", legend="Close")
-    plot_rates.circle("Maturity","Close", source=ds_prev, fill_color="#CE603D", size=8, legend="Close")
+
+
+
+    plot_rates.line("Maturity","Live", source=ds_prev, color=ui.LIVE_COLOR, legend="Live")
+    plot_rates.circle("Maturity","Live", source=ds_prev, fill_color=ui.LIVE_COLOR,
+                      line_color=ui.LIVE_COLOR, size=8, legend="Live")
+    plot_rates.line("Maturity","Close", source=ds_prev, color=ui.CLOSE_COLOR, legend="Close")
+    plot_rates.circle("Maturity","Close", source=ds_prev, fill_color=ui.CLOSE_COLOR,
+                      line_color=ui.CLOSE_COLOR, size=8, legend="Close")
+    ui.style_plot(plot_rates)
 
     # PNL - bar plot
     plot_pnl = figure(
             y_range=[-50000, 50000], title='PNL', x_axis_label='Maturity (yr)', 
-            width=1000, height=300
+            width=1000, height=200
     )
     plot_pnl.yaxis[0].formatter = NumeralTickFormatter(format="$ 0,0")
-    plot_pnl.rect(x="Maturity", y="Mid", width=1, height="PNL", source=ds_prev, fill_color="#CAB2D6")
-
+    plot_pnl.rect(x="Maturity", y="Mid", width=1, height="PNL", source=ds_prev,
+                  fill_color=ui.HIST_COLOR, line_color=ui.HIST_COLOR)
+    ui.style_plot(plot_pnl)
+    plot_pnl.xgrid.grid_line_color = None
 
     # Create DataTable widget from dataframe 'snapshot'
     columns = [
@@ -72,7 +82,7 @@ def create(new_df, df):
         TableColumn(field="PNL",        title="PNL",        editor=NumberEditor(step=0.1),    formatter=NumberFormatter(format="$ 0,0[.]00")),
     ]
 
-    data_table = DataTable(source=ds_prev, columns=columns, editable=True, width=1000)
+    data_table = DataTable(source=ds_prev, columns=columns, editable=True, width=1000, height=180)
 
     
     # Add ability to add new trades as a form
@@ -110,7 +120,10 @@ def run():
     # table for today's new trades
     new_df = init_df.drop(init_df.index) # same columns, no rows
     dashboard = create(new_df, init_df)
-    show(dashboard)
+    # show(dashboard)
+
+    ui.create_and_open(dashboard, cursession())
+
     # kick off 2-factor mean reverting process for yield curve
     Thread(target=background_thread, args=(ds_prev,)).start()
 
@@ -200,6 +213,7 @@ def bookit_clicked():
 if __name__ == "__main__":
     name = "pnl_dashboard" # name of document to push to bokeh server
     output_server(name) # see io.py
+
     run()
 
     cursession().poll_document(curdoc(), 0.1) # poll document for updates every 0.1 sec
