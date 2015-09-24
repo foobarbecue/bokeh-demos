@@ -122,14 +122,14 @@ TOOLS="pan,wheel_zoom,box_zoom,box_select,hover,crosshair,lasso_select,reset"
 
 # create the scatter plot
 p = figure(tools=TOOLS, plot_width=500, plot_height=500, title=None, min_border=10, min_border_left=50)
-p.scatter('routes', 'population', radius=20, color="color", alpha=0.7, name="scatter", source=scatter_ds)
+p.circle('routes', 'population', size=9, color="color", alpha=0.5, name="scatter", source=scatter_ds)
 
 renderer = p.select(dict(name="scatter"))
 
-# box_select_tool = p.select(dict(type=BoxSelectTool))
-# box_select_tool.select_every_mousemove = False
-# lasso_select_tool = p.select(dict(type=LassoSelectTool))
-# lasso_select_tool.select_every_mousemove = False
+box_select_tool = p.select(dict(type=BoxSelectTool))
+box_select_tool.select_every_mousemove = False
+lasso_select_tool = p.select(dict(type=LassoSelectTool))
+lasso_select_tool.select_every_mousemove = False
 
 hover = p.select(dict(type=HoverTool))
 if hover:
