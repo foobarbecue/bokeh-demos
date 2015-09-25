@@ -98,6 +98,8 @@ cac['Syrian Arab Republic'] = cac['Syria']
 cac['United Republic of Tanzania'] = cac['Tanzania']
 cac['China, Hong Kong SAR'] = cac['Hong Kong']
 cac["Lao People's Democratic Republic"] = cac['Laos']
+cac["Dem. People's Republic of Korea"] = cac['South Korea']
+# cac["Côte d'Ivoire"] = cac['Ivory Coast']
 
 gdp = {k: v for k, v in zip(gdpds['country'], gdpds['2014'])}
 
@@ -111,7 +113,6 @@ scatter_ds = ColumnDataSource(data={
     'routes': population['routes'],
     'radius': [cac.get(x, default)['radius'] * 50 for x in population['country']],
     'color': [get_country_color_by_gdp(gdp.get(x, -1)) for x in population['country']],
-    # 'color': [cac.get(x, default)['color'] for x in population['country']],
     'gdp': [gdp.get(x, -1) for x in population['country']],
     'country': population['country'],
     'city': population['city'],
@@ -123,7 +124,6 @@ TOOLS="pan,wheel_zoom,box_zoom,box_select,hover,crosshair,lasso_select,reset"
 # create the scatter plot
 p = figure(tools=TOOLS, plot_width=500, plot_height=500, title=None, min_border=10, min_border_left=50,
            x_axis_location='above')
-
 p.xaxis.axis_label = "Routes"
 p.yaxis.axis_label = "Population"
 
@@ -143,7 +143,7 @@ if hover:
         ("Country", "@country"),
         ("Population", "@population"),
         ("Routes", "@routes"),
-        # ("country", "@country"),
+        ("Country GDP", "@gdp"),
     ])
 
 # create the horizontal histogram
@@ -153,8 +153,6 @@ hmax = max(hhist)*1.1
 
 ph = figure(toolbar_location=None, plot_width=p.plot_width, plot_height=200, x_range=p.x_range,
             y_range=(hmax, 0), title=None, min_border=10, min_border_left=50)
-
-
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hhist, color="#6b6b6b", line_color="#4c4c4c")
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.5, line_color=None, name="hhist")
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.1, line_color=None, name="hhist2")
@@ -165,14 +163,12 @@ ph_source = ph.select(dict(name="hhist"))[0].data_source
 ph_source2 = ph.select(dict(name="hhist2"))[0].data_source
 
 # create the vertical histogram
-# vhist, vedges = np.histogram(y, bins=20)
 vhist, vedges = np.histogram(population['population'], bins=20)
 vzeros = np.zeros(len(vedges)-1)
 vmax = max(vhist)*1.1
 
 # need to adjust for toolbar height, unfortunately
 th = 42
-
 pv = figure(toolbar_location=None, plot_width=200, plot_height=p.plot_height+th-10, x_range=(0, vmax),
             y_range=p.y_range, title=None, min_border=10, min_border_top=th, x_axis_location='above', y_axis_location='right')
 pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vhist, color="#6b6b6b", line_color="#4c4c4c")
@@ -188,10 +184,10 @@ pv_source2 = pv.select(dict(name="vhist2"))[0].data_source
 
 legend_source = ColumnDataSource(
     {
-        'label': ['> 250', '100 - 250', '< 100'],
-        'y': [90, 60, 30],
+        'label': ['> 999 Bil.', '500 Bil. - 999 Bil.', '< 500 Bil.'],
+        'y': [70, 50, 30],
         'x': [35] * 3,
-        'fill_color': ["#8e4d9e", "#2cbdb9", "#b9bf3d"]
+        'fill_color': ["#b9bf3d", "#2cbdb9", "#8e4d9e"]
     }
 )
 
@@ -200,32 +196,29 @@ def create_size_legend(source, theme='dark'):
     xdr = Range1d(0, 220)
     ydr = Range1d(0, 120)
 
-    plot = Plot(x_range=xdr, y_range=ydr, title="", plot_width=200, plot_height=100,
+    plot = Plot(x_range=xdr, y_range=ydr, title="", plot_width=160, plot_height=200,
                 min_border=10, min_border_left=40, **pss.PLOT_FORMATS)
+
     # Add the writing
+    country = Text(x=25, y=95, text=['Country GDP'], y_offset=5,
+                   text_color='black', text_font_style='bold',
+                   text_font_size='12pt',
+                   # **pss.FONT_PROPS_SM
+    )
+    plot.add_glyph(source, country, selection_glyph=country)
 
-    # legend = Text(x=5, y=110, text=['''Country Airports:'''], x_offset = 15, **pss.FONT_PROPS_SM)
-    # plot.add_glyph(source, legend, selection_glyph=legend)
-
-    country = Text(x='x', y='y', text='label', x_offset = 25,  y_offset=5,
+    country = Text(x='x', y='y', text='label', x_offset = 15,  y_offset=5,
                    text_color='#231f20', text_font_style='bold', text_font_size='9pt',
                    # **pss.FONT_PROPS_SM
     )
     plot.add_glyph(source, country, selection_glyph=country)
 
-    if theme == "dark":
-        line_color = '#221f1f'
-        fill_color = '#ffffff'
-    else:
-        line_color = 'black'
-        fill_color = 'black'
     circle = Circle(x='x', y="y", fill_color="fill_color", line_color="fill_color",
-                    # fill_alpha='alpha', line_alpha='alpha',
                     size=10)
-    isol_aps_renderer = plot.add_glyph(source, circle, selection_glyph=circle,
+    c_renderer = plot.add_glyph(source, circle, selection_glyph=circle,
                                        nonselection_glyph=circle)
 
-    # tap = TapTool(plot=plot, renderers=[isol_aps_renderer])
+    # tap = TapTool(plot=plot, renderers=[c_renderer])
     # plot.tools.extend([tap])
 
     plot.background_fill = '#6b6b6b'
@@ -236,39 +229,13 @@ legend = create_size_legend(legend_source)
 legend.min_border_left = 10
 
 columns = [
-    TableColumn(field="city", title="city", editor=StringEditor(), width=80),
+    TableColumn(field="city", title="city", editor=StringEditor(), width=120),
     TableColumn(field="country", title="country", editor=StringEditor(), width=80),
-    TableColumn(field="population",         title="population",         editor=IntEditor()),
-    TableColumn(field="routes",          title="routes",    editor=IntEditor()),\
-    # TableColumn(field="gdp",          title="gdp",    editor=NumberEditor(), formatter=NumberFormatter(format="0.0")),
+    TableColumn(field="population",         title="population",         editor=IntEditor(), width=120),
+    TableColumn(field="routes",          title="routes",    editor=IntEditor(), width=80),
 ]
 data_table = DataTable(source=scatter_ds, columns=columns, editable=True, width=300, height=p.plot_height+th-10+100)
 
-
-# set up callbacks
-def on_selection_change(obj, attr, old, new):
-    inds = np.array(new['1d']['indices'])
-    if len(inds) == 0 or len(inds) == len(x):
-        hhist = hzeros
-        vhist = vzeros
-        hhist2 = hzeros
-        vhist2 = vzeros
-    else:
-        hhist, _ = np.histogram(x[inds], bins=hedges)
-        vhist, _ = np.histogram(y[inds], bins=vedges)
-        negative_inds = np.ones_like(x, dtype=np.bool)
-        negative_inds[inds] = False
-        hhist2, _ = np.histogram(x[negative_inds], bins=hedges)
-        vhist2, _ = np.histogram(y[negative_inds], bins=vedges)
-
-    ph_source.data["top"] = hhist
-    pv_source.data["right"] = vhist
-    ph_source2.data["top"] = -hhist2
-    pv_source2.data["right"] = -vhist2
-
-    cursession().store_objects(ph_source, pv_source, ph_source2, pv_source2)
-
-# scatter_ds.on_change('selected', on_selection_change)
 
 layout = vplot(
     hplot(Paragraph(text='Flight Data Dashboard', width=400, height=10, classes=['apptitle'])
@@ -291,7 +258,6 @@ layout = vplot(
     )
 
 )
-
 
 curdoc().clear()
 curdoc().add(layout)
