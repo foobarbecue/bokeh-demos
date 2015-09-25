@@ -121,7 +121,12 @@ scatter_ds = ColumnDataSource(data={
 TOOLS="pan,wheel_zoom,box_zoom,box_select,hover,crosshair,lasso_select,reset"
 
 # create the scatter plot
-p = figure(tools=TOOLS, plot_width=500, plot_height=500, title=None, min_border=10, min_border_left=50)
+p = figure(tools=TOOLS, plot_width=500, plot_height=500, title=None, min_border=10, min_border_left=50,
+           x_axis_location='above')
+
+p.xaxis.axis_label = "Routes"
+p.yaxis.axis_label = "Population"
+
 p.circle('routes', 'population', size=9, color="color", alpha=0.5, name="scatter", source=scatter_ds)
 
 renderer = p.select(dict(name="scatter"))
@@ -148,10 +153,13 @@ hmax = max(hhist)*1.1
 
 ph = figure(toolbar_location=None, plot_width=p.plot_width, plot_height=200, x_range=p.x_range,
             y_range=(hmax, 0), title=None, min_border=10, min_border_left=50)
+
+
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hhist, color="#6b6b6b", line_color="#4c4c4c")
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.5, line_color=None, name="hhist")
 ph.quad(bottom=0, left=hedges[:-1], right=hedges[1:], top=hzeros, color="#6b6b6b", alpha=0.1, line_color=None, name="hhist2")
 ph.xgrid.grid_line_color = None
+ph.min_border_left = 78
 
 ph_source = ph.select(dict(name="hhist"))[0].data_source
 ph_source2 = ph.select(dict(name="hhist2"))[0].data_source
@@ -166,11 +174,14 @@ vmax = max(vhist)*1.1
 th = 42
 
 pv = figure(toolbar_location=None, plot_width=200, plot_height=p.plot_height+th-10, x_range=(0, vmax),
-            y_range=p.y_range, title=None, min_border=10, min_border_top=th)
+            y_range=p.y_range, title=None, min_border=10, min_border_top=th, x_axis_location='above', y_axis_location='right')
 pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vhist, color="#6b6b6b", line_color="#4c4c4c")
 pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#6b6b6b", alpha=0.5, line_color=None, name="vhist")
 pv.quad(left=0, bottom=vedges[:-1], top=vedges[1:], right=vzeros, color="#6b6b6b", alpha=0.1, line_color=None, name="vhist2")
 pv.ygrid.grid_line_color = None
+
+
+pv.min_border_top = 86
 
 pv_source = pv.select(dict(name="vhist"))[0].data_source
 pv_source2 = pv.select(dict(name="vhist2"))[0].data_source
@@ -222,13 +233,14 @@ def create_size_legend(source, theme='dark'):
     return plot
 
 legend = create_size_legend(legend_source)
+legend.min_border_left = 10
 
 columns = [
     TableColumn(field="city", title="city", editor=StringEditor(), width=80),
     TableColumn(field="country", title="country", editor=StringEditor(), width=80),
-    # TableColumn(field="population",         title="population",         editor=IntEditor()),
-    # TableColumn(field="routes",          title="routes",    editor=IntEditor()),\
-    TableColumn(field="gdp",          title="gdp",    editor=NumberEditor(), formatter=NumberFormatter(format="0.0")),
+    TableColumn(field="population",         title="population",         editor=IntEditor()),
+    TableColumn(field="routes",          title="routes",    editor=IntEditor()),\
+    # TableColumn(field="gdp",          title="gdp",    editor=NumberEditor(), formatter=NumberFormatter(format="0.0")),
 ]
 data_table = DataTable(source=scatter_ds, columns=columns, editable=True, width=300, height=p.plot_height+th-10+100)
 
