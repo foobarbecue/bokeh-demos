@@ -124,18 +124,17 @@ btn_selected_airport = Button(label=airport['airport'].name.values[0],
 def create_airport_map(theme):
     # create plot object and add all it's objects
     plot = figure(title="Flights", plot_width=900, plot_height=600, toolbar_location='right',
-                  tools="pan,box_zoom,box_select,tap,resize,reset")
+                  y_range=(-50, 90), x_range=(-160, 155),
+                  tools="pan,box_zoom,tap,resize,reset")
 
     ui.create_airport_map(plot, ap_routes_source, all_airports,
                           worldmap_source, theme=theme)
 
     route_freq_legend = ui.create_route_freq_legend(freq_legend_source, theme)
-    # legend = ui.create_size_legend(legend_source, theme)
     int_ext_route_legend = ui.create_int_ext_route_legend(theme)
 
     return {
         'main_map': plot,
-        # 'legend': legend,
         'route_freq_legend': route_freq_legend,
         'int_ext_route_legend': int_ext_route_legend,
     }
@@ -143,8 +142,8 @@ def create_airport_map(theme):
 def create_frequency_map(theme):
     # create plot object and add all it's objects
     plot = figure(title="Flights", plot_width=900, plot_height=600,
-                  toolbar_location='right',
-                  tools="pan,box_zoom,box_select,tap,resize,reset")
+                  toolbar_location='right', y_range=(-50, 90), x_range=(-150, 160),
+                  tools="pan,box_zoom,hover,crosshair,resize,reset")
 
     ui.create_population_map(plot, population_source, worldmap_source, theme=theme)
 
@@ -159,17 +158,10 @@ def create_frequency_map(theme):
            cumulate_paths)
 def app(search_button):
     # retrieve the theme to be used..
-    theme = 'dark' #request.args.get('theme', 'default')
+    theme = 'dark'
+    searchbox = TextInput(classes=['appsearch'])
 
-    searchbox = TextInput(classes=['appsearch'])#completions=[x for x in utils.airports.name.values])
-
-    # # create plot object and add all it's objects
-    # plot = figure(title="Flights", plot_width=900, plot_height=600, toolbar_location='right',
-    #               tools="pan,box_zoom,box_select,tap,resize,reset")
-    #
-    # ui.create_airport_map(plot, ap_routes_source, all_airports,
-    #                       worldmap_source, theme=theme)
-    # plot = create_airport_map(theme)
+    # create plot object and add all it's objects
 
     info_txt = PreText(text=airport['summary'], width=200, height=250)
 
@@ -180,9 +172,7 @@ def app(search_button):
                       visible=False
     )
 
-
     objects = {
-        # 'main_map': plot,
         'info_txt': info_txt,
         'starburst': starburst,
         'searchbox': searchbox,
@@ -190,9 +180,7 @@ def app(search_button):
     }
 
     objects.update(ui.create_dlg_airports_list(airports_found_source))
-
     objects.update(create_frequency_map(theme))
-
     objects.update(create_airport_map(theme))
 
     return objects

@@ -147,7 +147,7 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
     max_radius = max(dists)
 
     plot = figure(title="", plot_width=300, plot_height=300,
-                  tools="pan,box_zoom,box_select,tap,hover,resize,reset",
+                  tools="pan,wheel_zoom,hover,crosshair",
                   toolbar_location = None,
                   x_range = [ox-max_radius, ox+max_radius],
                   y_range = [oy-max_radius, oy+max_radius],
@@ -163,7 +163,7 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
 
 
     circle = Circle(x='lng', y="lat", fill_color='color', line_color='color',
-                    fill_alpha='alpha', line_alpha='alpha', radius='radius')
+                    fill_alpha='alpha', line_alpha='alpha', size = 8)# radius='radius')
     isol_aps_renderer = plot.add_glyph(isolated_aps, circle, selection_glyph=circle,
                                        nonselection_glyph=circle)
 
@@ -187,8 +187,9 @@ def create_starburst(ap_routes, isolated_aps, theme='default'):
     hover = plot.select(dict(type=HoverTool))
     if hover:
         hover.tooltips = OrderedDict([
-            ("ID", "@id"),
-            ("Name", "@name"),
+            # ("ID", "@id"),
+            # ("Name", "@name"),
+            ('routes', '@routes'),
             ("city", "@city"),
             ("country", "@country"),
         ])
@@ -434,7 +435,7 @@ def create_int_ext_route_legend(theme):
         'x_int': [20, 20],
         'y': [20, 40],
         'color': ['#29bdbc', '#c28cbd'],
-        'label': ["Nat'l networks", "Int'l networks"]
+        'label': ["Int'l networks", "Nat'l networks"]
     })
 
     legend = Text(x='x', y='y', text='label', x_offset = 25, y_offset=5, **pss.FONT_PROPS_XXSM)
