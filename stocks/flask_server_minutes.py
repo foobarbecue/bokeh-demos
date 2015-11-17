@@ -11,7 +11,10 @@ import pandas as pd
 import dask.array as da
 from subsample import coarsen
 from bokeh.server.crossdomain import crossdomain
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 FACTOR_BASE = 15000
 fromtimestamp = dt.datetime.fromtimestamp
