@@ -7,7 +7,7 @@ from bokeh.models.sources import ColumnDataSource, AjaxDataSource
 from bokeh.models import BoxSelectTool, HoverTool
 from blaze.server.client import Client
 from blaze import Data
-from bokeh.models.actions import Callback
+from bokeh.models.callbacks import CustomJS
 
 import requests
 
@@ -132,7 +132,7 @@ code = """
 
 """
 
-callback = Callback(
+callback = CustomJS(
     args={'source': static_source,
           'selection_source': selection_source,
           'main_plot': p},
