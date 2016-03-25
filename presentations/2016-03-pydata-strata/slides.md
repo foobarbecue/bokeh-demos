@@ -1,12 +1,13 @@
 # Intro to data visualization with Bokeh
 
 ## PyData at Strata
-### Sarah Bird [@birdsarah](https://twitter.com/birdsarah)
-### Bryan Van de Ven [@bryvdv](https://twitter.com/bryvdv)
 
-http://github.com/bokeh/bokeh-demos/strata
+- Sarah Bird [@birdsarah](https://twitter.com/birdsarah)
+- Bryan Van de Ven [@bryvdv](https://twitter.com/bryvdv)
 
-March 29th, 2016
+http://github.com/bokeh/bokeh-demos/
+
+<small>March 29th, 2016</small>
 
 Note:
 - Don't worry about the styling, once the content's in place, I'll give it a skin - probably simple and similar to https://birdsarah.github.io/europython-2015-bokeh/static/slides.html#/2 with an extra corner logo
@@ -40,7 +41,7 @@ Note:
 
 ## Bokeh
 
-<section data-background="https://raw.githubusercontent.com/bokeh/bokeh-demos/strata-sj-2016/pydata/assets/bokeh-gallery-background-dark.png">
+<img class="slide_image" src="images/gallery-screenshot.png" style="position: absolute; top: 0; right: 0; opacity: 0.2">
 
 - data visualization library
 - web-based, interactive, data-driven
@@ -67,16 +68,20 @@ Note:
 ## Bokeh - Ecosystem
 
 - Other language bindings: rbokeh (actively maintained), scala (activeley maintained), julia (not maintained), typescript (coming soon)
-- Datashader - interact with BIG** data
+- Datashader - interact with BIG<sup>**</sup> data
 - Write your own custom models
 
 ---
 
-## Core concepts
+## Core concepts for today
 
-- Navigating Bokeh's interfaces (charts, plotting, and probably not models!)
-- Bokeh server (what it is, what it isn't, do I need it)
-- Sharing your work (notebook, standalone files, server)
+- Navigating Bokeh's interfaces 
+ - charts, plotting, and probably not models!
+- Bokeh server 
+ - what it is, what it isn't, do I need it
+- Sharing your work 
+ - notebook, standalone files, server 
+- Awareness of the Bokeh ecosystem
 
 ---
 
@@ -84,29 +89,26 @@ Note:
 
 There are a number of ways to use Bokeh - pick the one that's right for you:
 
-* Charts
-* Plotting
-* Models
+* Charts (high speed)
+* Plotting (sensible defaults)
+* Models (high customization)
 
 We'll come back to this multiple times today.
 
 ---
 
-### `bokeh.charts` (high speed)
+<h5 style="padding-top: 1em; margin-bottom: -0.2em"> `bokeh.charts` (high speed)</h5>
 
 - One-line charts
 - Processes your data & spits out a chart
 
-<br/>
 
-### `bokeh.plotting` (sensible defaults)
+<h5 style="padding-top: 1em; margin-bottom: -0.2em"> `bokeh.plotting` (sensible defaults)</h5>
 
 - Tries to pick sensible defaults
 - You organize your data, it organizes your plot
 
-<br/>
-
-### `bokeh.models` (high customization)
+<h5 style="padding-top: 1em; margin-bottom: -0.2em"> `bokeh.models` (high customization)</h5>
 
 - The lowest level
 - Offers you the most control
@@ -117,7 +119,7 @@ We'll come back to this multiple times today.
 ## Interfaces
 
 * Charts (high speed)
-* Plotting (sensile defaults)
+* Plotting (sensible defaults)
 * Models (high customization)
 
 We'll come back to this multiple times today.
