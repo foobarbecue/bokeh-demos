@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os.path
 import random
-from functools import partial
+from functools import partial, update_wrapper, wraps
 import datetime as dt
 from flask import Flask, json, Response
 import h5py
@@ -11,6 +11,14 @@ import pandas as pd
 import dask.array as da
 from subsample import coarsen
 from StringIO import StringIO
+from six import string_types
+from datetime import timedelta
+
+try:
+    from flask import Flask, jsonify, make_response, request, current_app
+except ImportError:
+    raise ImportError("You need Flask to run this example!")
+
 
 FACTOR_BASE = 15000
 fromtimestamp = dt.datetime.fromtimestamp
@@ -129,7 +137,7 @@ details = {
 }
 
 
-@app.route('/subsample/<start>/<end>', methods=['GET', 'OPTIONS'])
+@app.route('/subsample/<start>/<end>', methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def subsample(start, end):
     start = int(start)
@@ -167,13 +175,13 @@ def subsample(start, end):
     return json.jsonify(curr_ds)
 
 
-@app.route('/data', methods=['GET', 'OPTIONS'])
+@app.route('/data', methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def get_data():
     return json.jsonify(curr_ds)
 
 
-@app.route('/alldata', methods=['GET', 'OPTIONS'])
+@app.route('/alldata', methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def get_alldata():
     global curr_ds
@@ -193,13 +201,13 @@ def get_alldata():
     return json.jsonify(curr_ds)
 
 
-@app.route('/details', methods=['GET', 'OPTIONS'])
+@app.route('/details', methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def get_details():
     return json.jsonify(details)
 
 
-@app.route('/alldata.csv', methods=['GET', 'OPTIONS'])
+@app.route('/alldata.csv', methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", methods=['GET', 'POST'], headers=None)
 def get_csv_data():
     df = pd.DataFrame(curr_ds)
